@@ -90,6 +90,7 @@ my computer vision stack once helped a drone win a national championship. my bar
 | 🎵 | **EdgeCAAI-Net** | PyTorch · librosa · gradient reversal | 1.4M-param music genre classifier. accidentally proved everyone's benchmarks were leaking artists. oops. |
 | 🖼️ | **LocateVision** — campus classifier | ResNet-50 · Swin Transformer · Flask | 99.76% accuracy. CNN + transformer with gated attention. served via flask. |
 | 🌲 | smart dictionary & autocomplete | C · BST · AVL · threaded BT | benchmarked three tree structures on 90k words. picked a winner (it's AVL. usually.). |
+| 🚓 | **GridWatch** — emergency dispatch sim | C11 · Fibonacci heaps · suffix arrays · BK-trees · TUI + Flask | sends ambulances around a grid city. every metric on screen is powered by a different data structure. the entire advanced DS syllabus, dressed up as a 911 dispatcher. |
 | 💬 | whatsapp clone | Java · sockets · Swing · MySQL | wrote a custom TCP protocol because apparently that's a thing i do. |
 | 🌾 | **[elegantlandscape.in](https://elegantlandscape.in)** | vanilla HTML/CSS/JS · canvas · Vercel | live site for a Pune landscape studio. 192-frame scroll-driven canvas animation. zero frameworks, zero build step. |
 
