@@ -86,6 +86,7 @@ my computer vision stack once helped a drone win a national championship. my bar
 | 🎭 | **SGEE** — emotion embeddings | PyTorch · RoBERTa · HuggingFace | anchors transformer representations in VAD (valence-arousal-dominance) psycholinguistic space. contrastive + supervised, two phases. |
 | 💹 | **LexDrift** — SEC filing radar | FastAPI · Next.js · sentence-transformers | detects when companies *suddenly* start sounding different in 10-Ks. finance with extra steps. |
 | 🔮 | **PRISM** — autonomous stock analyst | LLM ReAct loop · TensorFlow · XGBoost · Prophet | AI agent that picks its own research tools and runs them live. watch it think in real time. |
+| 📈 | **Nifty-Pricing-Mirror** | Python · Groww API · rich · Flask | live spot-vs-futures basis surface for NSE indices. tells you when futures are in premium, discount, or flat — refreshed every 3 seconds. |
 | 📦 | **Tesseract** — cargo X-ray VLM | FastAPI · Qwen2.5-VL-7B · HuggingFace | a vision-language model for customs officers. contraband detection with natural-language reasoning. |
 | 🎵 | **EdgeCAAI-Net** | PyTorch · librosa · gradient reversal | 1.4M-param music genre classifier. accidentally proved everyone's benchmarks were leaking artists. oops. |
 | 🖼️ | **LocateVision** — campus classifier | ResNet-50 · Swin Transformer · Flask | 99.76% accuracy. CNN + transformer with gated attention. served via flask. |
