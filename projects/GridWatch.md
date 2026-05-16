@@ -9,9 +9,9 @@
 **Default branch:** `main`  
 **License:** —  
 **Created:** 2026-04-20  
-**Last pushed:** 2026-04-29  
-**Metadata updated:** 2026-04-29  
-**Size (GitHub reported):** 118 KB  
+**Last pushed:** 2026-05-05  
+**Metadata updated:** 2026-05-05  
+**Size (GitHub reported):** 173 KB  
 
 ---
 
@@ -23,13 +23,13 @@ A C11 emergency-dispatch simulator (libdispatch + TUI + Python/Flask web UI) tha
 
 | Language | Bytes | Share |
 |----------|------:|------:|
-| C | 263,065 | 81.4% |
-| Python | 28,136 | 8.7% |
-| JavaScript | 13,385 | 4.1% |
-| CSS | 7,820 | 2.4% |
-| HTML | 5,564 | 1.7% |
-| Shell | 2,726 | 0.8% |
-| Makefile | 1,868 | 0.6% |
+| C | 317,329 | 83.5% |
+| Python | 30,807 | 8.1% |
+| JavaScript | 13,385 | 3.5% |
+| CSS | 7,820 | 2.1% |
+| HTML | 5,564 | 1.5% |
+| Shell | 2,726 | 0.7% |
+| Makefile | 1,868 | 0.5% |
 | Batchfile | 420 | 0.1% |
 
 ## File tree
@@ -312,4 +312,4 @@ Each test binary prints `PASS` and exits 0 on success.
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/GridWatch*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/GridWatch*

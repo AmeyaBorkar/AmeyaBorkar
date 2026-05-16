@@ -1,6 +1,6 @@
 # VeridianOS
 
-> Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. Boots on real hardware.
+> Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. 214 automated tests on every boot. Boots on real Dell laptops.
 
 **Repository:** [`AmeyaBorkar/VERIDIAN`](https://github.com/AmeyaBorkar/VERIDIAN)  
 **Category:** Systems / OS  
@@ -9,30 +9,30 @@
 **Default branch:** `master`  
 **License:** Apache License 2.0  
 **Created:** 2026-04-03  
-**Last pushed:** 2026-04-26  
-**Metadata updated:** 2026-04-26  
-**Size (GitHub reported):** 3,485 KB  
+**Last pushed:** 2026-05-07  
+**Metadata updated:** 2026-05-07  
+**Size (GitHub reported):** 3,608 KB  
 
 ---
 
 ## What it is (one-paragraph version)
 
-Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. Boots on real hardware.
+Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. 214 automated tests on every boot. Boots on real Dell laptops.
 
 ## Language breakdown
 
 | Language | Bytes | Share |
 |----------|------:|------:|
-| C | 2,724,834 | 97.8% |
+| C | 2,774,303 | 97.9% |
 | Assembly | 28,232 | 1.0% |
-| Makefile | 21,136 | 0.8% |
+| Makefile | 21,136 | 0.7% |
 | Shell | 7,561 | 0.3% |
 | Linker Script | 2,878 | 0.1% |
 | GDB | 292 | 0.0% |
 
 ## File tree
 
-- Total entries indexed: **267** (244 files, 23 directories)
+- Total entries indexed: **268** (245 files, 23 directories)
 
 ```
 .gitignore  (308 B)
@@ -45,9 +45,10 @@ linker.ld  (2 KB)
 boot/    [2 files]
   boot/boot.asm
   boot/multiboot2.asm
-docs/    [27 files]
+docs/    [28 files]
   docs/8G_SMP_DIAGNOSIS_2026-04-23.md
   docs/AMD_NVME_DIAGNOSIS.md
+  docs/AMD_USB_FIX.md
   docs/AUDIT_ADVERSARIAL_2026-04.md
   docs/AUDIT_CONVERGENCE_2026-04.md
   docs/AUDIT_FULL_SYSTEM_2026-04.md
@@ -60,8 +61,7 @@ docs/    [27 files]
   docs/AUDIT_WAVE_MANIFEST.md
   docs/BARE_METAL_MATRIX.md
   docs/BOOT_AUDIT.md
-  docs/FULL_AUDIT_2026-04.md
-  ... and 12 more under docs/
+  ... and 13 more under docs/
 domains/    [8 files]
   domains/common/hypercall.h
   domains/common/syscall.h
@@ -608,4 +608,4 @@ Ameya Borkar
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/VERIDIAN*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/VERIDIAN*

@@ -4,13 +4,13 @@
 
 **Repository:** [`AmeyaBorkar/AdaptaNet`](https://github.com/AmeyaBorkar/AdaptaNet)  
 **Category:** ML Framework / Computer Vision  
-**Visibility:** Private  
+**Visibility:** Public  
 **Primary language:** Python  
 **Default branch:** `main`  
 **License:** —  
 **Created:** 2026-03-03  
 **Last pushed:** 2026-03-05  
-**Metadata updated:** 2026-03-05  
+**Metadata updated:** 2026-05-10  
 **Size (GitHub reported):** 141 KB  
 
 ---
@@ -261,4 +261,4 @@ This project is for research and educational purposes.
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/AdaptaNet*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/AdaptaNet*

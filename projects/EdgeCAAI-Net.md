@@ -428,4 +428,4 @@ This project is released for academic and research purposes.
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/EdgeCAAI-Net*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/EdgeCAAI-Net*

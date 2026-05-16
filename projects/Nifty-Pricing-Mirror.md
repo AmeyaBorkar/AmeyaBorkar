@@ -1,6 +1,6 @@
 # Nifty Pricing Mirror
 
-> Live spot-vs-nearest-futures basis surface for any NSE index, powered by the Groww trading API. CLI plus a small dashboard server; classifies each constituent as PREMIUM / DISCOUNT / FLAT and annualises the basis for quick term-structure reads.
+> Live spot vs nearest-futures basis surface for any NSE index (Nifty 200 by default), powered by the Groww trading API. Rich-based terminal table, optional browser dashboard, CSV streaming for downstream analysis. Classifies each stock as PREMIUM/DISCOUNT/FLAT and the index as CONTANGO/BACKWARDATION/MIXED.
 
 **Repository:** [`AmeyaBorkar/Nifty-Pricing-Mirror`](https://github.com/AmeyaBorkar/Nifty-Pricing-Mirror)  
 **Category:** FinTech / Derivatives  
@@ -9,15 +9,15 @@
 **Default branch:** `main`  
 **License:** —  
 **Created:** 2026-05-02  
-**Last pushed:** 2026-05-02  
-**Metadata updated:** 2026-05-02  
-**Size (GitHub reported):** 40 KB  
+**Last pushed:** 2026-05-03  
+**Metadata updated:** 2026-05-03  
+**Size (GitHub reported):** 43 KB  
 
 ---
 
 ## What it is (one-paragraph version)
 
-Live spot-vs-nearest-futures basis surface for any NSE index, powered by the Groww trading API. CLI plus a small dashboard server; classifies each constituent as PREMIUM / DISCOUNT / FLAT and annualises the basis for quick term-structure reads.
+Live spot vs nearest-futures basis surface for any NSE index (Nifty 200 by default), powered by the Groww trading API. Rich-based terminal table, optional browser dashboard, CSV streaming for downstream analysis. Classifies each stock as PREMIUM/DISCOUNT/FLAT and the index as CONTANGO/BACKWARDATION/MIXED.
 
 ## Language breakdown
 
@@ -31,11 +31,12 @@ Live spot-vs-nearest-futures basis surface for any NSE index, powered by the Gro
 
 ## File tree
 
-- Total entries indexed: **21** (19 files, 2 directories)
+- Total entries indexed: **22** (20 files, 2 directories)
 
 ```
 .env.example  (467 B)
 .gitignore  (249 B)
+README.md  (5 KB)
 __main__.py  (276 B)
 requirements.txt  (95 B)
 run.ps1  (636 B)
@@ -56,43 +57,136 @@ nifty_pricing_mirror/    [13 files]
   nifty_pricing_mirror/universe.py
 ```
 
-## Module-by-module summary
-
-*(There is no README on the default branch yet. The summary below is reconstructed from the source files.)*
-
-| Module | Role |
-|--------|------|
-| `cli.py` | Entry point. Wires auth → instrument resolution → live basis loop. Exposes `nifty-mirror` CLI with `--index`, `--interval`, `--once`, `--symbols-file` flags. Uses `rich` for the live console UI. |
-| `config.py` | `Settings` dataclass — environment-driven config (Groww API key, refresh interval, output dirs). |
-| `universe.py` | Bundled NSE index universes (NIFTY 50, etc.) loaded from packaged symbol lists. |
-| `instruments.py` | Resolves each underlying symbol to its **(spot, nearest-future)** instrument pair against the Groww instrument master. `InstrumentPair` data class; `InstrumentsRepo` for caching. |
-| `groww_client.py` | Authenticated HTTP client for the Groww trading API; raises `AuthenticationError` on token failure; exposes LTP fetches needed by the pricing engine. |
-| `pricing.py` | The core derivative math. `PricingEngine` pairs spot & nearest-futures LTPs and produces an `IndexSnapshot` of `PriceRow` records — each carries `basis = future − spot`, `basis_pct`, `annualised_pct = basis_pct × (365 / dte)`, and a `Stance` of `PREMIUM` / `DISCOUNT` / `FLAT` / `UNKNOWN`. |
-| `display.py` | `LiveSurface` — `rich`-based terminal renderer that re-paints the basis surface in place. |
-| `csv_export.py` | `write_snapshot` (single tick) and `append_history` (running log) for downstream analysis. |
-| `server.py` | Optional `DashboardServer` — small Flask-style HTTP service that exposes the same snapshot to a browser. |
-| `static/` | Vanilla HTML/CSS/JS dashboard UI — `index.html`, `styles.css`, `app.js`. |
-| `smoke_test.py` | End-to-end sanity check used to verify auth + basis pipeline without entering the live loop. |
-| `run.ps1` | Windows convenience launcher (PowerShell). |
-| `.env.example` | Template for the Groww API credential / token env vars. |
-
-## What the output looks like (in concept)
-
-For each constituent of the chosen NSE index, on every tick:
-
-```
-SYMBOL    SPOT     FUTURE   EXPIRY      DTE   BASIS    BASIS%    ANNUALISED%   STANCE
-RELIANCE  2,941.5  2,952.7  2026-05-29  27    +11.20   +0.38%    +5.15%        PREMIUM
-TCS       3,512.0  3,508.4  2026-05-29  27    -3.60    -0.10%    -1.39%        DISCOUNT
-...
-```
-
-Aggregates printed alongside: `avg_basis_pct`, `avg_annualised_pct`, `premium_count` — a quick read on whether the index term structure is leaning bullish (broad premium) or bearish (broad discount).
-
 ## README (verbatim)
 
-> *(no README on default branch — see module-by-module summary above)*
+# Nifty Pricing Mirror
+
+Live spot vs nearest-futures basis surface for an NSE index, powered by the
+[Groww trading API](https://groww.in/trade-api). Renders a Rich-based table
+in the terminal, optionally serves a browser dashboard, and can stream
+snapshots to CSV for Excel / Power Query.
+
+## What it shows
+
+For every stock in the universe (Nifty 200 by default, Nifty 50 also bundled),
+each refresh fetches:
+
+- **Spot LTP** from the NSE cash segment
+- **Nearest-expiry futures LTP** from NSE FNO
+
+…and derives:
+
+- `basis = future - spot`
+- `basis_pct = (future / spot - 1) * 100`
+- `annualised_pct = basis_pct * (365 / days_to_expiry)`
+- A **stance** per stock — `PREMIUM` / `DISCOUNT` / `FLAT` / `UNKNOWN`
+- An **index bias** — `CONTANGO` / `BACKWARDATION` / `MIXED`
+
+## Installation
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Python 3.10+ is required (uses PEP 604 union syntax and `from __future__
+import annotations`).
+
+## Authentication
+
+Copy `.env.example` to `.env` and fill **one** of the three credential paths:
+
+| Path | Variables | Notes |
+| --- | --- | --- |
+| A | `GROWW_ACCESS_TOKEN` | Paste from the Groww dashboard. Short-lived. |
+| B | `GROWW_API_KEY` + `GROWW_API_SECRET` | Rotated daily by Groww. |
+| C | `GROWW_API_KEY` + `GROWW_TOTP_SECRET` | Long-lived. Recommended. |
+
+Generate credentials at <https://groww.in/trade-api/api-keys>.
+
+## Usage
+
+```powershell
+python -m nifty_pricing_mirror.cli
+```
+
+…or use the wrapper script:
+
+```powershell
+.\run.ps1                          # default live loop, Nifty 200
+.\run.ps1 -Once                    # single snapshot, then exit
+.\run.ps1 -InstallDeps             # install/refresh requirements first
+```
+
+### CLI flags
+
+| Flag | Default | Purpose |
+| --- | --- | --- |
+| `--index {nifty50,nifty200}` | `nifty200` | Bundled universe to track. |
+| `--symbols-file PATH` | — | Use a custom universe (one symbol per line, `#` comments). Overrides `--index`. |
+| `--interval SECONDS` | `NIFTY_REFRESH_SECONDS` env or `3.0` | Seconds between refreshes. |
+| `--once` | off | Print one snapshot and exit. |
+| `--csv-out PATH` | — | Atomically rewrite this CSV with the latest snapshot every refresh. Safe to point Excel / Power Query at. |
+| `--csv-history PATH` | — | Append every refresh to this CSV (timestamped, one row per stock per refresh). |
+| `--serve [PORT]` | off (default port `8080`) | Start the HTTP dashboard alongside the loop. Disables the in-terminal table. |
+| `--host` | `127.0.0.1` | Dashboard bind address. Use `0.0.0.0` to expose on the LAN. |
+| `--verbose`, `-v` | off | INFO-level logs. |
+
+### Examples
+
+```powershell
+# Live terminal table, Nifty 50, 5-second refresh
+python -m nifty_pricing_mirror.cli --index nifty50 --interval 5
+
+# Browser dashboard at http://127.0.0.1:9000
+python -m nifty_pricing_mirror.cli --serve 9000
+
+# Atomic snapshot for Excel + a growing time-series log
+python -m nifty_pricing_mirror.cli `
+    --csv-out .\out\latest.csv `
+    --csv-history .\out\history.csv
+
+# Custom universe
+python -m nifty_pricing_mirror.cli --symbols-file .\my_basket.txt
+```
+
+## How it works
+
+1. **Auth** — `groww_client.py` resolves credentials from env (token → key+secret → key+TOTP) and instantiates `GrowwAPI`.
+2. **Instrument master** — `instruments.py` downloads Groww's instrument CSV (cached on disk for 12h by default), then resolves each symbol to a spot row and the nearest active futures contract.
+3. **Pricing loop** — `pricing.py` issues two batched `get_ltp` calls per refresh (cash + FNO), pairs them by symbol, and computes basis / annualised yield. The Groww live-data limit (10 req/sec, 300 req/min) is respected via a `_MIN_GAP_SECONDS` throttle.
+4. **Surfaces** — by default `display.py` renders a `rich.live.Live` table in the terminal. With `--serve`, `server.py` runs a threaded Flask app that serves a static dashboard (under `nifty_pricing_mirror/static/`) and exposes the latest snapshot as JSON at `/api/snapshot`.
+5. **CSV side-channels** — `csv_export.py` writes the current snapshot via a tmp-file + `Path.replace` (atomic on Windows and POSIX), so an Excel / Power Query consumer never reads a half-written file.
+
+## Project layout
+
+```
+nifty_pricing_mirror/
+  cli.py            # argparse + main loop orchestration
+  config.py         # dotenv-backed Settings
+  groww_client.py   # auth + batched LTP fetch
+  instruments.py    # instrument-master download, cache, resolution
+  pricing.py        # basis / annualised math, stance + bias
+  display.py        # Rich live table
+  server.py         # Flask dashboard server
+  csv_export.py     # atomic CSV snapshot + history append
+  universe.py       # Nifty 50 / Nifty 200 symbol lists
+  static/           # browser dashboard (HTML/CSS/JS)
+__main__.py         # `python "Nifty Pricing Mirror"` entry point
+run.ps1             # PowerShell wrapper
+smoke_test.py       # quick sanity check
+.env.example        # credential template
+```
+
+## Notes
+
+- Index constituents are baked in. NSE rebalances periodically — pass
+  `--symbols-file` if you need a different snapshot.
+- A symbol with no active NSE futures contract (or no cash listing) is logged
+  as skipped at startup; it won't appear in the table.
+- The `.cache/instruments.csv` file is refreshed automatically once it
+  exceeds `NIFTY_INSTRUMENTS_CACHE_HOURS` (default 12h). Delete it to force
+  a fresh download.
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/Nifty-Pricing-Mirror*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/Nifty-Pricing-Mirror*

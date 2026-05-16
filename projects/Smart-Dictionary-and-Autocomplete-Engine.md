@@ -363,4 +363,4 @@ This project is released for educational use. The dictionary data (`words.txt`) 
 
 ---
 
-*Generated 2026-05-02 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/AdvanceDataStructuresSmartDictionary*
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/AdvanceDataStructuresSmartDictionary*
