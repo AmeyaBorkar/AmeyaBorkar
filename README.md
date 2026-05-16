@@ -2,7 +2,7 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1a1a2e,100:16213e&height=180&section=header&text=Ameya%20Borkar&fontSize=58&fontColor=e6edf3&fontAlignY=38&desc=i%20build%20things.%20some%20of%20them%20even%20work.&descAlignY=56&descSize=18&animation=fadeIn" width="100%"/>
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=800&color=58A6FF&center=true&vCenter=true&width=780&lines=yes%2C+i+beatbox.+no%2C+you+cannot+hear+it.;barbell+in+the+morning+·+keyboard+at+night.;wrote+a+51k-line+microkernel+·+for+fun+·+it+boots.;taught+a+drone+to+see+things.+it+won+nationally.)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=800&color=58A6FF&center=true&vCenter=true&width=800&lines=yes%2C+i+beatbox.+no%2C+you+cannot+hear+it.;barbell+in+the+morning+·+keyboard+at+night.;wrote+a+70k-line+hypervisor+microkernel+·+for+fun+·+it+boots.;taught+a+drone+to+see+things.+it+won+nationally.)](https://git.io/typing-svg)
 
 [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=firefox&logoColor=58a6ff)](https://ameyaborkar-60d8c.web.app)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ameya-borkar-69b947381)
@@ -22,7 +22,7 @@ when i learn something, my first thought is *"okay but what can i build with thi
 my computer vision stack once helped a drone win a national championship. my barbell still doesn't care.
 
 > built a 15,000-line banking system in C just to see if i could. i could.
-> so i wrote a 51,000-line microkernel next. it boots on real hardware.
+> so i wrote a 70,000-line hypervisor microkernel next. it boots on three different laptops.
 
 🌐 &nbsp;[ameyaborkar-60d8c.web.app](https://ameyaborkar-60d8c.web.app)
 
@@ -77,7 +77,7 @@ my computer vision stack once helped a drone win a national championship. my bar
 
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
-| ⚙️ | **VeridianOS** — a microkernel | C · assembly · Intel VT-x / AMD-V · EPT/NPT | 51,000 lines of bare-metal C. every OS component gets its own hardware-enforced memory domain. boots on real dell laptops. i'm still processing this. |
+| ⚙️ | **VeridianOS** — a type-1 hypervisor microkernel | C · assembly · Intel VT-x / AMD-V · IOMMU · EPT/NPT | 70,400 lines of bare-metal C across 247 source files. now ships with its own tcp/ip stack. every OS component gets a hardware-enforced memory domain. boots end-to-end on three machines spanning Kaby Lake, Tiger Lake, *and* Zen 5. i'm still processing this. |
 | 🇮🇳 | **SARVA** — pan-india life utility | Go · Flutter · PostgreSQL+RLS · MQTT · pgvector · OSM | sab kuch. sabke liye. four pillars — samay · parivar · adhikar · awaaz. ~6 direct deps per service. mTLS internally. built like real users are on it day one — because they will be, soon. |
 | 🏦 | full banking system | C · Win32 · multithreading | 15,000 lines. in C. for fun. yes, with a stock market. |
 | 🧱 | **TaskForge-OS** | C · POSIX threads · Win32 | a tiny OS kernel that runs a banking app through actual system calls. schedulers, paging, deadlock prevention — all the fun stuff. |

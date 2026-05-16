@@ -1,6 +1,6 @@
 # VeridianOS
 
-> Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. 214 automated tests on every boot. Boots on real Dell laptops.
+> Bare-metal x86-64 type-1 hypervisor microkernel using CPU virtualization (Intel VT-x / AMD-V) plus IOMMU (VT-d / AMD-Vi) as its isolation primitives. **~70,400 lines of C and assembly across 247 source files**, including a full TCP/IP networking stack, ext2 filesystem with journal-style transactions, Linux-compatible syscall ABI, and deterministic record/replay. Boots end-to-end on three machines spanning Intel Kaby Lake (2017), Tiger Lake (2020), and AMD Zen 5 (2024).
 
 **Repository:** [`AmeyaBorkar/VERIDIAN`](https://github.com/AmeyaBorkar/VERIDIAN)  
 **Category:** Systems / OS  
@@ -9,15 +9,15 @@
 **Default branch:** `master`  
 **License:** Apache License 2.0  
 **Created:** 2026-04-03  
-**Last pushed:** 2026-05-07  
-**Metadata updated:** 2026-05-07  
+**Last pushed:** 2026-05-16  
+**Metadata updated:** 2026-05-16  
 **Size (GitHub reported):** 3,608 KB  
 
 ---
 
 ## What it is (one-paragraph version)
 
-Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V) as its isolation primitive. ~51,000 lines of C and assembly. 214 automated tests on every boot. Boots on real Dell laptops.
+Bare-metal x86-64 type-1 hypervisor microkernel using CPU virtualization (Intel VT-x / AMD-V) plus IOMMU (VT-d / AMD-Vi) as its isolation primitives. **~70,400 lines of C and assembly across 247 source files**, including a full TCP/IP networking stack, ext2 filesystem with journal-style transactions, Linux-compatible syscall ABI, and deterministic record/replay. Boots end-to-end on three machines spanning Intel Kaby Lake (2017), Tiger Lake (2020), and AMD Zen 5 (2024).
 
 ## Language breakdown
 
@@ -32,20 +32,20 @@ Bare-metal x86-64 microkernel using hardware virtualization (Intel VT-x / AMD-V)
 
 ## File tree
 
-- Total entries indexed: **268** (245 files, 23 directories)
+- Total entries indexed: **270** (247 files, 23 directories)
 
 ```
-.gitignore  (308 B)
+.gitignore  (389 B)
 CONTRIBUTING.md  (6 KB)
 LICENSE  (11 KB)
 Makefile  (19 KB)
-README.md  (23 KB)
+README.md  (30 KB)
 build.sh  (1 KB)
 linker.ld  (2 KB)
 boot/    [2 files]
   boot/boot.asm
   boot/multiboot2.asm
-docs/    [28 files]
+docs/    [30 files]
   docs/8G_SMP_DIAGNOSIS_2026-04-23.md
   docs/AMD_NVME_DIAGNOSIS.md
   docs/AMD_USB_FIX.md
@@ -61,7 +61,7 @@ docs/    [28 files]
   docs/AUDIT_WAVE_MANIFEST.md
   docs/BARE_METAL_MATRIX.md
   docs/BOOT_AUDIT.md
-  ... and 13 more under docs/
+  ... and 15 more under docs/
 domains/    [8 files]
   domains/common/hypercall.h
   domains/common/syscall.h
@@ -141,113 +141,130 @@ userland/    [10 files]
 
 # VeridianOS
 
-A bare-metal x86-64 microkernel that uses hardware virtualization as its isolation primitive.
+A bare-metal x86-64 type-1 hypervisor microkernel that uses CPU virtualization extensions (Intel VT-x and AMD-V) as its primary OS isolation mechanism.
 
-VeridianOS repurposes Intel VT-x and AMD-V --- the CPU extensions that power virtual machines --- to isolate every OS component in its own hardware-enforced memory domain. Each domain runs inside nested page tables (EPT/NPT). A compromised domain cannot access another domain's memory; the CPU prevents it.
+Every OS component — drivers, filesystem, shell, applications, test suite — runs inside its own hardware-isolated *domain*. Each domain has dedicated nested page tables (Intel EPT or AMD NPT). A compromised domain cannot read another domain's memory because the CPU's MMU physically does not translate the address. This is the same hardware that isolates customer VMs in cloud platforms, applied at process granularity instead of VM granularity.
 
-On top of this, the hypervisor provides transactional crash recovery, preemptive SMP scheduling, demand-paged variable-size domains, shared memory IPC, an ext2 filesystem with block-level transactions, a Linux-compatible syscall ABI with musl + busybox, and record/replay for deterministic debugging, all enforced through the same hardware mechanism.
+On top of this isolation primitive the hypervisor provides:
 
-~51,000 lines of C, headers, and assembly. No external dependencies. No libc in the kernel. Boots on real hardware.
+- Preemptive SMP scheduling with per-CPU run queues and ticket locks
+- Demand-paged variable-size domains (4 MB to 1 GB) with scatter mapping
+- Capability-gated hypercall and syscall interface — no root, no privilege escalation paths
+- Transactional crash recovery via EPT/NPT write-protection + COW undo log
+- ext2 filesystem with block cache, journal-style transactions, and snapshot versioning
+- Linux-compatible syscall ABI (~50 syscalls) running musl-linked busybox
+- Deterministic record / replay of any domain's execution
+- IOMMU-enforced device isolation (Intel VT-d + AMD-Vi) with interrupt remapping
+
+**70,398 lines of C, headers, and assembly across 199 source files. No external dependencies. No libc inside the kernel. Boots on three different bare-metal machines spanning two CPU vendors and three CPU generations (Kaby Lake 2017, Tiger Lake 2020, Zen 5 2024).**
 
 ---
 
 ## Tested Hardware
 
-| Machine              | CPU                           | Cores | Virtualization | RAM    | Boot        | Tests (PASS / SKIP / FAIL) |
-|----------------------|-------------------------------|-------|----------------|--------|-------------|----------------------------|
-| Dell laptop          | Intel i7-11xxx (Tiger Lake)   | 8     | VMX + EPT      | 16 GB  | UEFI        | 106 / 43 / 0               |
-| Dell laptop          | Intel i3-7100U (Kaby Lake)    | 4     | VMX + EPT      | 16 GB  | Legacy BIOS | 106 / 43 / 0               |
-| QEMU + KVM           | AMD Ryzen AI 9 HX 370 host    | 4     | SVM + NPT      | 512 MB | BIOS        | 109 / 40 / 0               |
-| QEMU TCG             | `qemu64` software             | 1     | Software       | 512 MB | BIOS        | 109 / 40 / 0               |
+| Machine          | CPU                          | Cores | Virtualization | RAM    | Boot        | Status |
+|------------------|------------------------------|-------|----------------|--------|-------------|--------|
+| Dell laptop      | Intel i3-7100U (Kaby Lake)   | 4     | VMX + EPT      | 16 GB  | Legacy BIOS | ✅ end-to-end verified |
+| Dell laptop      | Intel i7-11xxx (Tiger Lake)  | 8     | VMX + EPT      | 16 GB  | UEFI        | ✅ end-to-end verified |
+| ASUS ROG Zephyrus| AMD Ryzen AI 9 HX 370 (Zen 5)| 12    | SVM + NPT      | 32 GB  | UEFI        | ✅ end-to-end verified |
+| QEMU + KVM       | Intel host / AMD host        | 4     | VMX/SVM passthrough | 512 MB | BIOS+UEFI | ✅ baseline + regression |
+| QEMU TCG         | `qemu64` software            | 1-4   | software emulation | 512 MB | BIOS    | ✅ baseline |
 
-214 automated tests run on every boot (Phase 9 + audit-fix waves added 65 over the 8g.2 baseline).  The kernel checks results against a per-boot-mode baseline (`baremetal-safe`, `baremetal-storage`, `qemu-safe`, `qemu-storage`) and halts on any deviation. Release builds compile out assertions and fault-injection, yielding lower PASS counts against their own release baseline.
+Three bare-metal platforms span legacy BIOS, modern UEFI, and AMD UEFI; two CPU vendors; four CPU generations from 2017 to 2024. The kernel runs hundreds of automated tests on every boot against per-platform baselines and halts on any deviation. See [docs/BARE_METAL_MATRIX.md](docs/BARE_METAL_MATRIX.md) for the full per-feature support matrix.
 
 ---
 
 ## Architecture
 
 ```
-+-----------------------------------------------------------+
-|                 User Domains (hardware-isolated)           |
-|  +--------+  +--------+  +--------+  +--------+           |
-|  | Domain | | Domain  | | Domain  | | Domain  |  ...      |
-|  | 4MB-1GB| | 4MB-1GB | | 4MB-1GB | | 4MB-1GB |           |
-|  | EPT/NPT| | EPT/NPT | | EPT/NPT | | EPT/NPT |           |
-|  +--------+  +--------+  +--------+  +--------+           |
-+-----------------------------------------------------------+
-|  Syscall ABI (musl + busybox)  |  Capability-Gated         |
-|  fork / exec / pipes / signals |  Hypercall Interface      |
-+-----------------------------------------------------------+
-|  Transaction Engine        |  Shared Memory IPC           |
-|  (COW undo via EPT/NPT)    |  (grant / revoke / destroy)  |
-+-----------------------------------------------------------+
-|  ext2 FS + bcache + FS txn + versioning                   |
-+-----------------------------------------------------------+
-|  Record / Replay (RDTSC intercept, syscall log)           |
-+-----------------------------------------------------------+
-|  Preemptive Scheduler (per-CPU run queues, ticket locks)  |
-+-----------------------------------------------------------+
-|  Hardening: canaries, SMEP/SMAP, guard pages, NMI watchdog|
-+-----------------------------------------------------------+
-|  VMX / SVM  |  EPT / NPT  |  Buddy PMM  |  Slab kmalloc   |
-+-----------------------------------------------------------+
-|  IOAPIC  |  MSI/MSI-X  |  LAPIC Timer  |  IRQ Allocator   |
-+-----------------------------------------------------------+
-|  AHCI  |  NVMe  |  virtio-blk/net  |  xHCI/EHCI  |  PCI   |
-+-----------------------------------------------------------+
-|                    x86-64 Hardware                        |
-+-----------------------------------------------------------+
++---------------------------------------------------------------+
+|             User Domains (hardware-isolated)                  |
+|  +--------+ +--------+ +--------+ +-----------------+         |
+|  | shell  | | editor | | vault  | | Linux guest     |         |
+|  | native | | native | | native | | full Linux +    |  ...    |
+|  | EPT/NPT| | EPT/NPT| | EPT/NPT| | userland        |         |
+|  +--------+ +--------+ +--------+ +-----------------+         |
++---------------------------------------------------------------+
+|  Linux Syscall ABI (musl/busybox)  |  Capability-Gated         |
+|  fork/exec/pipes/signals           |  Hypercall Interface      |
++---------------------------------------------------------------+
+|  Transaction Engine          |  Shared Memory IPC             |
+|  (COW undo via EPT/NPT)      |  (grant / revoke / destroy)    |
++---------------------------------------------------------------+
+|  ext2 + block cache + FS journal + snapshot versioning        |
++---------------------------------------------------------------+
+|  Record / Replay (RDTSC intercept, syscall log)               |
++---------------------------------------------------------------+
+|  Preemptive Scheduler (per-CPU run queues, ticket locks)      |
++---------------------------------------------------------------+
+|  Hardening: canaries, SMEP/SMAP, guard pages, NMI watchdog,   |
+|  IBPB / L1D_FLUSH / VERW spec mitigations                     |
++---------------------------------------------------------------+
+|  VMX / SVM   |  EPT / NPT  |  Buddy PMM   |  Slab kmalloc     |
++---------------------------------------------------------------+
+|  IOMMU (Intel VT-d + AMD-Vi)  |  Interrupt Remapping          |
++---------------------------------------------------------------+
+|  IOAPIC | MSI/MSI-X | LAPIC Timer | x2APIC | IRQ Allocator    |
++---------------------------------------------------------------+
+|  AHCI | NVMe | virtio-blk/net | xHCI/EHCI | USB-MSC | PCI/PCIe|
++---------------------------------------------------------------+
+|                       x86-64 hardware                         |
++---------------------------------------------------------------+
 ```
+
+For the long-form architecture (native vs Linux-guest domains, hybrid composition, IPC layers), see [docs/DOMAIN_ARCHITECTURE.md](docs/DOMAIN_ARCHITECTURE.md).
 
 ---
 
 ## Key Ideas
 
-### Hardware memory isolation
+### Hardware-enforced memory isolation
 
-Every domain runs inside CPU-enforced nested page tables. Traditional process isolation relies on software-configured page tables that are vulnerable to kernel bugs. VeridianOS uses the same hardware that isolates virtual machines to isolate every OS component.
+Every domain runs in its own nested page table tree (EPT on Intel, NPT on AMD). Traditional process isolation depends on software-managed page tables enforced by a single shared kernel — a kernel bug compromises every process. VeridianOS uses the same hardware that isolates customer VMs in cloud platforms, applied at process granularity. There is no shared kernel that domains can attack; the hypervisor is unreachable from any domain except via explicit, capability-gated hypercalls.
 
 ```
 domain_id >= 0:    PASS
-own_memory_mapped: PASS    -- GPA 0x200000 (own code) accessible
-32mb_blocked:      PASS    -- GPA 0x2000000 (outside domain) BLOCKED by EPT
-80mb_blocked:      PASS    -- GPA 0x5000000 BLOCKED by EPT
-256mb_blocked:     PASS    -- GPA 0x10000000 BLOCKED by EPT
+own_memory_mapped: PASS    -- own code at GPA 0x200000 accessible
+32mb_blocked:      PASS    -- GPA outside domain blocked by EPT
+80mb_blocked:      PASS    -- larger GPA also blocked
+256mb_blocked:     PASS    -- and at much larger offsets too
 ```
+
+### Capability-based access control
+
+There is no root, no sudo, no UID 0 to escalate to. Every privileged operation is gated by a capability the hypervisor holds on behalf of the domain. Capabilities are typed (MEMORY, IO, IPC, DOMAIN, NETWORK, DEBUG), unforgeable from inside a domain, and time-limited where appropriate. A domain can do exactly what it was granted at spawn time and nothing more.
 
 ### Transactional crash recovery
 
-Any domain can wrap operations in transactions at the OS level. The hypervisor write-protects all domain pages via EPT/NPT. On the first write to each page, the original content is copied to an undo log (copy-on-write). On commit, the log is discarded. On abort or crash, every modified page is restored.
-
-Block-level filesystem transactions (`fstxn.c`) extend the same model to ext2 writes: a transaction batches inode, directory, and bitmap changes, commits atomically to the journal, or rolls back on failure.
-
-```
-txn_commit_persists:       PASS   -- changes survive commit
-txn_abort_rollback:        PASS   -- changes reverted on abort
-txn_multi_page_rollback:   PASS   -- multiple pages rolled back atomically
-fstxn_commit_atomic:       PASS   -- ext2 inode + bitmap + block atomic
-fstxn_crash_recovery:      PASS   -- partial txn detected and rolled back
-```
+Any domain can wrap operations in a transaction. The hypervisor write-protects every domain page through EPT/NPT. On the first write to each page, the original contents are copied to an undo log; the write proceeds. On `txn_commit` the log is discarded (O(1)). On `txn_abort` or crash, every modified page is restored from the log (O(n modified pages)). The same mechanism extends to filesystem-level transactions: ext2 metadata, directory entries, and bitmap changes are batched and committed atomically through a journal, with automatic rollback on crash detected at the next mount.
 
 ### Demand-paged variable domains
 
-Domains request 4 MB to 1 GB of address space. Physical pages are allocated only on first access via EPT/NPT fault handling. A 16 MB shell domain typically touches fewer than 10 physical pages.
+Domains declare a target address space size between 4 MB and 1 GB. Physical pages are allocated only on first access via EPT/NPT fault handling. A 16 MB shell domain typically touches fewer than 10 physical pages, with the rest of its address space backed by nothing until it is needed.
 
 ### Shared memory IPC
 
-Domains exchange data through grant-based shared memory regions mapped into both EPT/NPT tables. Measured latency: ~5 ns (17-27 cycles) through L1 cache.
+Domains exchange data through hypervisor-mediated shared memory regions. The owner allocates a region; the hypervisor grants the receiver an EPT/NPT mapping with explicit RW or RO flags and tracks the region in software-available bits of the leaf entries. Either side can revoke. Measured latency for a shared-memory load: ~5 ns (17–27 cycles) through L1 cache.
 
 ### Linux-compatible syscall ABI
 
-A single `syscall` entry point in the hypervisor services ~40 Linux syscalls on behalf of domains running musl-linked binaries. `fork`, `execve`, `wait4`, `pipe`, `kill`, file I/O, signals, and pipes all work. Busybox runs unmodified. `exec <file>` from the shell launches ELF binaries out of the ext2 filesystem.
+A single hypervisor syscall entry point services ~50 Linux syscalls on behalf of domains running musl-linked binaries. `fork`, `execve`, `wait4`, `pipe`, `kill`, file I/O, `mmap`, signals, sockets, `poll`, and the rest of the busybox syscall surface all work. Domain binaries are built against an unmodified musl source tree (with a small VeridianOS port for syscall numbers) and busybox runs unmodified. `exec /bin/ls` from the shell loads a real ELF binary out of the ext2 filesystem.
+
+### Network stack
+
+A from-scratch TCP/IP stack runs as a hypervisor library: ARP, IPv4, IPv6, ICMP, UDP, TCP with SACK + DSACK + Reno congestion control, DHCP client, DNS resolver, BSD sockets, `poll`. virtio-net is the production driver path with MSI-X and soft-IRQ-based RX delivery. busybox `wget` and `nc` run end-to-end against the stack inside a domain. See [Phase 9 work for details].
 
 ### Record and replay
 
-Every domain's execution can be recorded (syscall returns, RDTSC values, signal deliveries, preemption points). The replay engine re-runs the recorded log deterministically, reproducing bit-identical state. This is the foundation for the production time-travel debugger scheduled for Phase 13.
+Every domain's execution can be recorded: VM exits, syscall arguments + returns, RDTSC values, signal deliveries, preemption points, IO port values. The replay engine reproduces execution deterministically with bit-identical state — a foundation for production-grade time-travel debugging.
+
+### IOMMU-enforced device isolation
+
+Intel VT-d and AMD-Vi DMA remapping plus interrupt remapping. Every PCIe device is auto-attached at boot. Device DMA stays within whatever memory the hypervisor permitted; a misbehaving device cannot DMA into hypervisor memory or another domain's memory. Fault recording (Intel) and the Event Log (AMD) surface mis-routed DMA attempts as observable events. With IOMMU, hardware passthrough becomes safe — a Linux guest can be given exclusive ownership of a physical GPU or NIC without breaking the isolation invariant.
 
 ### Hardening
 
-Phase 8 added stack canaries (`-fstack-protector-strong` with a per-boot random guard), SMEP/SMAP per-CPU, guard pages on every kernel stack, a dual-tick + scheduler-heartbeat NMI watchdog, block-driver recovery, a dmesg ring with offline dump via `savelog`, and a panic-capture crash dump. A 219-finding pre-production audit was closed across 60 fix commits.
+The hypervisor ships with: stack canaries (`-fstack-protector-strong` with per-boot random guard from RDSEED), SMEP/SMAP per CPU, kernel stack guard pages, IST stacks for NMI/#DF/#MCE, dual-heartbeat NMI watchdog, IBPB/L1D_FLUSH/VERW speculative-execution mitigations on VM-entry, capability-gated logging, panic-time crash dump, ELF entry-in-segment validation, ext2 metadata-block free guards, and dozens more line items. A 219-finding pre-production audit was closed across 60 fix commits; subsequent whole-system and Phase 9 audits added another ~300 findings, also closed. See [docs/HARDENING_INVENTORY.md](docs/HARDENING_INVENTORY.md) for the complete state.
 
 ---
 
@@ -255,17 +272,17 @@ Phase 8 added stack canaries (`-fstack-protector-strong` with a per-boot random 
 
 Measured on bare-metal Intel i3-7100U at 2.4 GHz:
 
-| Operation                      | Latency    | Notes                             |
-|--------------------------------|------------|-----------------------------------|
-| `pmm_alloc_page`               | 52 ns      | Per-CPU page cache hit            |
-| `pmm_free_page`                | 51 ns      | Per-CPU page cache hit            |
-| `pmm_alloc_pages(512)` (2 MB)  | 45 ns      | Buddy bulk path                   |
-| `kmalloc(64)`                  | 41 ns      | Slab magazine hit                 |
-| `kfree(64)`                    | 39 ns      | Slab magazine hit                 |
-| `kmap` 4 KB round-trip         | 280 ns     | Map + unmap + TLB invalidate      |
-| TLB shootdown (4 CPUs)         | ~1850 ns   | IPI to 3 APs + ack                |
-| Shared memory read             | ~5 ns      | L1 through EPT/NPT                |
-| VM exit round-trip             | ~161 ns    | Hypercall path                    |
+| Operation                       | Latency   | Notes                            |
+|---------------------------------|-----------|----------------------------------|
+| `pmm_alloc_page`                | 52 ns     | Per-CPU page cache hit           |
+| `pmm_free_page`                 | 51 ns     | Per-CPU page cache hit           |
+| `pmm_alloc_pages(512)` (2 MB)   | 45 ns     | Buddy bulk path                  |
+| `kmalloc(64)`                   | 41 ns     | Slab magazine hit                |
+| `kfree(64)`                     | 39 ns     | Slab magazine hit                |
+| `kmap` 4 KB round-trip          | 280 ns    | Map + unmap + TLB invalidate     |
+| TLB shootdown (4 CPUs)          | ~1850 ns  | IPI to 3 APs + ack               |
+| Shared-memory load              | ~5 ns     | L1 through EPT/NPT               |
+| VM exit round-trip (hypercall)  | ~161 ns   | Bare metal, capability-checked   |
 
 ---
 
@@ -283,35 +300,35 @@ Build and run:
 ```bash
 make clean && make iso
 
-# QEMU with KVM (recommended)
+# QEMU with KVM (recommended for development)
 make run-kvm
 
-# QEMU without KVM (software emulation)
+# QEMU TCG (no virtualization required)
 make run
 
-# Automated test suite (exits with 0 on baseline match)
+# Automated test suite (exits 0 on baseline match, halts on deviation)
 make test
 ```
 
 Bare metal:
 
 ```bash
-# Write ISO to USB
+# Write the ISO to a USB drive
 sudo dd if=veridian.iso of=/dev/sdX bs=4M status=progress
 
 # Boot from USB. Disable Secure Boot if needed.
-# Tests run automatically; shell launches on success.
+# Tests run automatically; the shell launches on success.
 ```
 
 ### Boot modes
 
 GRUB presents three entries:
 
-| Entry             | Default | Description                                                                 |
-|-------------------|---------|-----------------------------------------------------------------------------|
-| Safe Mode         | Yes     | Block-device writes disabled. Safe for machines with real data.             |
-| Debug Mode        |         | Enables `verbose=1` --- full init output on screen and serial.              |
-| Storage Test Mode |         | Unlocks block-device writes. Only for dedicated test disks.                 |
+| Entry             | Default | Description                                                            |
+|-------------------|---------|------------------------------------------------------------------------|
+| Safe Mode         | Yes     | Block-device writes disabled. Safe for machines with real data.        |
+| Debug Mode        |         | Enables `verbose=1` — full init output on screen and serial.           |
+| Storage Test Mode |         | Unlocks block-device writes. Only for dedicated test disks.            |
 
 ---
 
@@ -320,45 +337,47 @@ GRUB presents three entries:
 ### Boot sequence
 
 1. GRUB loads the kernel via Multiboot2 (legacy BIOS or UEFI).
-2. 32-bit to 64-bit transition; 4 GB identity-mapped page tables.
-3. Serial, VGA, and framebuffer console initialization (including above-4 GB UEFI framebuffers with PAT + write-combining).
-4. Command line parsing (`safe_mode`, `disk_write`, `verbose`, `fb=off`, `spec_mit=off`, others).
-5. Buddy PMM initialization (3 zones, per-CPU page caches, up to 1 TB).
-6. IDT with 32 exception handlers and IST1 stacks per CPU.
+2. 32-bit to 64-bit transition; 4 GB identity-mapped initial page tables.
+3. Serial, VGA, and framebuffer console initialization, including above-4 GB UEFI framebuffers via PAT + write-combining mapping.
+4. Command-line parsing (`safe_mode`, `disk_write`, `verbose`, `fb=off`, `nosmt`, `iommu`, others).
+5. Buddy PMM init (3 zones DMA/DMA32/NORMAL, per-CPU page caches, scales to 1 TB).
+6. IDT with 32 exception handlers and per-CPU IST stacks.
 7. Kernel page tables with W^X enforcement and IPI-based TLB shootdown.
-8. SMP startup --- all cores online via INIT/SIPI, ACPI APIC topology.
-9. Slab allocator (16 size classes, per-CPU magazines).
-10. IOAPIC + IRQ vector allocation + LAPIC timer (periodic ~10 ms).
+8. SMP startup — every core online via INIT/SIPI, ACPI MADT topology.
+9. Slab allocator with 16 size classes and per-CPU magazines.
+10. IOAPIC + IRQ vector allocation + LAPIC timer.
 11. PCI/PCIe enumeration with ECAM, bridge recursion, MSI/MSI-X capability walking.
-12. Storage drivers: AHCI (SATA), NVMe, virtio-blk --- all interrupt-driven.
-13. USB drivers: xHCI (USB 3.0), EHCI (USB 2.0) with BIOS handoff; USB-MSC for mass storage.
-14. Filesystem mount with foreign-FS detection; ext2 with block cache, transactions, versioning.
-15. Hardening activation: SMEP/SMAP, stack guards, NMI watchdog, spec-mit MSRs.
-16. Hypervisor initialization (VMX or SVM, auto-detected).
-17. AP scheduler activation --- all CPUs enter their scheduler loops.
-18. 214 automated tests inside an isolated domain, with baseline verification.
-19. Screen clear, boot summary, interactive shell (busybox on ext2).
+12. IOMMU (Intel VT-d or AMD-Vi) initialization with boot-time device auto-attach + interrupt remapping.
+13. Storage drivers: AHCI (SATA), NVMe, virtio-blk — all interrupt-driven.
+14. USB drivers: xHCI (USB 3.0) with babble + transaction-error recovery, EHCI (USB 2.0); USB-MSC for mass storage; USB-HID for keyboard and mouse.
+15. Filesystem mount with foreign-FS detection; ext2 with block cache, transactions, snapshot versioning.
+16. Hardening activation: SMEP/SMAP, stack guards, NMI watchdog, spec-mit MSRs.
+17. Hypervisor initialization (VMX or SVM, auto-detected by CPUID).
+18. AP scheduler activation — every CPU enters its own scheduler loop.
+19. Automated kernel-side test suite inside an isolated domain, with per-platform baseline verification.
+20. Boot summary, then the interactive busybox-on-ext2 shell.
 
 ### Domain lifecycle
 
 ```
 CREATE  ->  Allocate physical memory (scatter-mapped, demand-paged)
         ->  Build EPT/NPT (GPA -> HPA)
-        ->  Initialize VMCB (AMD) or VMCS (Intel)
-        ->  Grant capabilities (MEMORY, IO, IPC, DOMAIN)
+        ->  Initialize VMCS (Intel) or VMCB (AMD)
+        ->  Grant capabilities (MEMORY, IO, IPC, DOMAIN, NETWORK, ...)
 
-RUN     ->  VMLAUNCH/VMRUN enters guest
+RUN     ->  VMLAUNCH/VMRUN enters the domain
         ->  EPT/NPT enforces memory boundaries
         ->  Timer fires -> VM exit -> preempt if quantum expired
-        ->  Hypercall -> capability check -> execute or deny -> resume
-        ->  Syscall -> Linux-compatible handler -> resume
+        ->  Hypercall  -> capability check -> execute or deny -> resume
+        ->  Syscall    -> Linux-compatible handler -> resume
 
-FORK    ->  Copy-on-write EPT/NPT fan-out
-        ->  Parent + child share physical pages until first write
-        ->  Each write faults, clones page, patches child's EPT
+FORK    ->  Copy-on-write EPT/NPT fan-out via EPT root copy
+        ->  Parent and child share physical pages until first write
+        ->  Each write faults, splits the page, patches the writer's EPT
 
-DESTROY ->  Rollback active transactions
-        ->  Free VMCB/VMCS, page tables, physical memory
+DESTROY ->  Roll back any active transactions
+        ->  Free VMCS/VMCB, page tables, physical memory
+        ->  Reparent any orphaned children
 ```
 
 ### Transaction flow
@@ -367,7 +386,7 @@ DESTROY ->  Rollback active transactions
 txn_begin   ->  Clear write bit on every domain page in EPT/NPT
             ->  Flush TLB
 
-Write fault ->  Copy original page to undo log
+write fault ->  Copy original page to undo log
             ->  Mark page writable, resume
 
 txn_commit  ->  Discard undo log (O(1))
@@ -376,22 +395,36 @@ txn_abort   ->  Restore pages from undo log (O(n modified pages))
 
 ### Security model
 
-Every privileged hypercall passes through capability checks. Domains hold typed access tokens (MEMORY, IO, IPC, DOMAIN) in a table that lives in hypervisor memory. Domains cannot forge, modify, or escalate capabilities.
+Every privileged hypercall passes through capability checks. Domains hold typed access tokens in a table that lives in hypervisor memory. Domains cannot forge, modify, or escalate capabilities — the table is not in any domain's address space.
 
 ```
-Domain A                         Hypervisor                    Domain B
-   |                                |                             |
-   |-- VMMCALL(SPAWN) ------------->|                             |
-   |                                |-- check DOMAIN+EXEC cap     |
-   |                                |-- domain_create()           |
-   |<-- domain ID ------------------|                             |
-   |                                |                             |
-   |-- read GPA 0x2000000 --------->|                             |
-   |                                |-- EPT: NOT MAPPED           |
-   |<-- #EPT violation, killed -----|                             |
+Domain A                      Hypervisor                    Domain B
+   |                              |                             |
+   |-- VMMCALL(SPAWN) ----------->|                             |
+   |                              |-- check DOMAIN+EXEC cap     |
+   |                              |-- domain_create()           |
+   |<-- domain ID ----------------|                             |
+   |                              |                             |
+   |-- read GPA 0x2000000 ------->|                             |
+   |                              |-- EPT: NOT MAPPED           |
+   |<-- #EPT violation, killed ---|                             |
 ```
 
-See [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) for the full capability + mitigation model.
+See [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) for the full threat model and the per-mitigation status table.
+
+---
+
+## Linux as a Domain
+
+A Linux guest is just a domain whose memory contains a Linux kernel image and whose configuration includes synthetic ACPI tables and a multi-vCPU layout. The same `domain_create()` path that launches a 16 MB native domain launches a 2 GB Linux guest. The same EPT/NPT, capability system, and scheduler apply.
+
+Two flavors plus a hybrid:
+
+- **Flavor A (virtio-only):** the guest sees synthetic devices (virtio-net, virtio-blk, virtio-gpu, virtio-console). The hypervisor owns the real hardware. No IOMMU is required; isolation is already provided by EPT/NPT and the absence of any guest path to real hardware.
+- **Flavor B (PCIe passthrough):** the guest gets exclusive ownership of one or more real PCIe devices. The guest's Linux drivers (`i915`, `iwlwifi`, `nvme.ko`, etc.) drive the silicon directly. IOMMU isolation is mandatory and is provided by VT-d / AMD-Vi.
+- **Hybrid:** within a single Linux guest, mix passthrough devices (typically GPU, USB) with virtio devices (typically storage, network). Or across guests on the same host, use Flavor A for tenant workloads and Flavor B for workstation guests that need real hardware.
+
+This is what makes "every Linux driver is yours for free" true — the hypervisor never has to write a GPU, WiFi, audio, or Bluetooth driver, because Linux already has one and IOMMU passthrough lets the guest use it directly. See [docs/DOMAIN_ARCHITECTURE.md](docs/DOMAIN_ARCHITECTURE.md) for the deployment patterns and IPC layers.
 
 ---
 
@@ -412,7 +445,7 @@ veridian> help
   Filesystem (ext2)
     ls [path]               List files
     cat <file>              Print file contents
-    write <n> <data>        Write data to file
+    write <name> <data>     Write data to file
     read <file>             Read file contents
     rm <file>               Delete a file
     mkdir <path>            Create directory
@@ -423,15 +456,18 @@ veridian> help
     stat <file>             File metadata
     sync                    Flush bcache to disk
     fsck                    Filesystem integrity check
-    vfs format              Format disk (typed confirmation)
 
   Transactions + versioning
-    txn <sub>               Transaction control
+    txn <sub>               Transaction control (begin/commit/abort)
     versions <file>         List file versions
     revert <file> <ver>     Roll file back to version
 
   Execution
-    exec <file>             Load + run ELF binary from ext2
+    exec <file>             Load + run an ELF binary from ext2
+
+  Networking
+    net                     Network device info
+    ping [ip]               Ping (default: 10.0.2.2)
 
   Test / bench
     test isolation          EPT/NPT memory isolation test
@@ -439,26 +475,19 @@ veridian> help
     bench                   VM exit latency benchmark
     bench pmm               PMM allocator benchmark
     bench kmalloc-64        Heap 64B hot path
-    bench kmalloc-4k        Heap large (>4K) path
     bench kmap-4k           kmap 4KB MMIO latency
-    bench kmap-2mb          kmap 2MB latency
-    bench kmap-1gb          kmap 1GB latency
     bench tlb-flush-1       TLB shootdown 1 page
-    bench tlb-flush-32      TLB shootdown 32 pages
-
-  Networking
-    net                     Network device info
-    ping [ip]               Ping (default: 10.0.2.2)
 
   Diagnostics
     pci                     List PCI devices
     disk                    Disk info + read sector 0
     ahcidebug               AHCI state dump
     nvmedebug               NVMe state dump
+    iommu                   IOMMU status (per-vendor)
     mouse                   USB mouse event test
     xray <sub>              Diagnostic dump
                             (pmm|pci|cpu|ahci|nvme|vfs|domain|
-                             blk|kmap|heap|irq|sched|all)
+                             blk|kmap|heap|irq|sched|iommu|all)
     dmesg [n]               Print last N log entries
     savelog <path>          Dump log ring to ext2 file
     crashdump [path]        Emit crash dump
@@ -472,8 +501,7 @@ veridian> help
   Hardening / fault injection
     fuzz <n>                Run syscall fuzzer for N iterations
     stress <n>              Run slab + PMM stress for N iterations
-    injectfail [sub]        Inject fault into block stack
-    echo <text>             Print text
+    injectfail [sub]        Inject fault into block / driver stack
 ```
 
 ---
@@ -490,7 +518,7 @@ VeridianOS/
 │   ├── vmx.c / svm.c              Intel VT-x / AMD-V hypervisor
 │   ├── vmx_asm.asm / svm_asm.asm  VMLAUNCH/VMRUN register save/restore
 │   ├── ept.c                      EPT/NPT page table management
-│   ├── domain.c                   Domain lifecycle, demand paging, shared memory
+│   ├── domain.c                   Domain lifecycle, demand paging, COW fork
 │   ├── txn.c                      Page-level transactional crash recovery
 │   ├── fstxn.c                    Filesystem-level transactions
 │   ├── sched.c                    Preemptive per-CPU scheduler
@@ -501,16 +529,21 @@ VeridianOS/
 │   ├── pmm.c                      Buddy allocator (3 zones, per-CPU caches)
 │   ├── kmap.c                     Kernel page tables, W^X, TLB shootdown
 │   ├── kmalloc.c                  Slab allocator, per-CPU magazines
-│   ├── smp.c                      SMP boot, AP entry, ticket locks
-│   ├── acpi.c                     RSDP/MADT parsing
+│   ├── smp.c                      SMP boot, AP entry, ticket locks, x2APIC
+│   ├── acpi.c                     RSDP / MADT / DMAR / IVRS parsing
 │   ├── pci.c                      PCI/PCIe enumeration, ECAM, MSI/MSI-X
-│   ├── ahci.c                     SATA driver (MSI, interrupt-driven)
-│   ├── nvme.c                     NVMe driver (MSI/MSI-X, interrupt-driven)
-│   ├── virtio_blk.c / virtio_net.c  QEMU virtio drivers
+│   ├── iommu.c                    Common IOMMU layer
+│   ├── iommu_intel.c              Intel VT-d (DMA + interrupt remapping)
+│   ├── iommu_amd.c                AMD-Vi (DMA + interrupt remapping)
+│   ├── ahci.c                     SATA driver (interrupt-driven)
+│   ├── nvme.c                     NVMe driver (with AMD MSI-timeout downgrade)
+│   ├── virtio_blk.c               virtio block device
+│   ├── virtio_net.c               virtio NIC (MSI-X + soft-IRQ RX)
 │   ├── usb/xhci.c / usb/ehci.c    USB 3.0 / 2.0 host controllers
 │   ├── usb/usb_msc.c              USB mass-storage class driver
 │   ├── usb/usb_mouse.c            USB HID mouse driver
 │   ├── irq.c / ioapic.c           IRQ vector allocator, IOAPIC driver
+│   ├── softirq.c                  Soft-IRQ infrastructure (network RX)
 │   ├── framebuffer.c              UEFI pixel console + PAT/WC mapping
 │   ├── vga.c / serial.c           VGA text + COM1 serial console
 │   ├── vfs.c                      VFS layer
@@ -519,6 +552,7 @@ VeridianOS/
 │   ├── blk_dev.c                  Block-device abstraction
 │   ├── blk_recovery.c             Driver-level recovery + fault injection
 │   ├── gpt.c                      GPT partition table parser
+│   ├── net_port.c                 Network port + timer integration
 │   ├── assert.c                   VERIDIAN_ASSERT runtime
 │   ├── fuzz.c                     HCALL + syscall fuzzer
 │   ├── stress.c                   Slab + PMM stress harness
@@ -526,15 +560,19 @@ VeridianOS/
 │   ├── stack_protect.c            Stack canary support
 │   ├── stack_guard.c              Per-CPU stack guard pages
 │   ├── watchdog.c                 NMI watchdog (tick + sched heartbeats)
-│   ├── crashdump.c                Panic capture + serialisation
+│   ├── crashdump.c                Panic capture + serialization
 │   ├── log_ring.c                 dmesg ring buffer
 │   ├── cpu_features.c             CPUID, PAT, spec-mit MSRs
 │   ├── cmdline.c                  Boot command line parser
 │   ├── timer.c                    LAPIC timer + PIT fallback
 │   ├── idt.c / idt_asm.asm        Interrupt descriptor table + stubs
 │   ├── ap_trampoline.asm          AP SIPI entry
-│   ├── test_safety.c              214 kernel-side safety tests + baselines
-│   └── xray.c                     Runtime diagnostics (12 subsystems)
+│   ├── test_safety.c              Kernel-side safety tests + per-platform baselines
+│   └── xray.c                     Runtime diagnostics (12+ subsystems)
+├── net/
+│   ├── core/                      Net library: pbuf, eth, arp, ip, icmp,
+│   │                              udp, tcp, dhcp, dns, sockets, loopback
+│   └── test/                      Network-stack regression tests
 ├── domains/
 │   ├── common/                    Shared headers (hypercall.h, syscall.h)
 │   ├── init/                      Init domain
@@ -542,8 +580,8 @@ VeridianOS/
 │   └── shell/                     Interactive shell
 ├── userland/
 │   ├── musl-patch/                Port of musl libc to VeridianOS syscalls
-│   ├── busybox/                   Busybox build config
-│   └── tests/                     Userland test binaries
+│   ├── busybox/                   Busybox build config + integration
+│   └── tests/                     Userland test binaries (incl. net_smoke)
 ├── lib/
 │   ├── string.c                   memcpy, memset, strcmp, strlen
 │   └── printf.c                   kprintf family
@@ -551,12 +589,13 @@ VeridianOS/
 │   ├── types.h                    Base types, bool, PACKED, ALIGNED
 │   ├── config.h                   Build-mode flags (debug vs release)
 │   ├── x86.h                      Port I/O, MSRs, CPUID, CR registers
-│   ├── vmx_defs.h / svm_defs.h    VMCS/VMCB layouts, exit codes, hypercalls
+│   ├── vmx_defs.h / svm_defs.h    VMCS / VMCB layouts, exit codes, hypercalls
+│   ├── iommu_defs.h               Common IOMMU definitions
 │   └── multiboot2.h               Multiboot2 structures
 ├── Makefile                       Build system (-O2, -Werror, -mno-sse)
 ├── linker.ld                      Kernel at 1 MB physical
 ├── grub/grub.cfg                  GRUB menu (Safe / Debug / Storage Test)
-├── docs/ROADMAP.md                Development roadmap
+├── docs/                          See "Documentation" below
 ├── CONTRIBUTING.md                Build instructions and design rules
 └── LICENSE                        Apache 2.0
 ```
@@ -565,20 +604,37 @@ VeridianOS/
 
 ## Roadmap
 
-| Phase | Status | Description                                                                 |
-|-------|--------|-----------------------------------------------------------------------------|
-| 0     | Done   | Boot safety, block-device write protection, foreign-FS detection            |
-| 1     | Done   | Buddy PMM, kernel page tables (kmap/W^X/TLB shootdown), slab allocator      |
-| 2     | Done   | IOAPIC, MSI/MSI-X, interrupt-driven NVMe + AHCI                             |
-| 3     | Done   | Preemptive scheduler, per-CPU run queues, SMP, ticket locks                 |
-| 4     | Done   | Full PCI/PCIe enumeration, ECAM, bridge recursion, BAR management           |
-| 5     | Done   | Variable domain memory, demand paging, shared memory IPC                    |
-| 6     | Done   | ext2 filesystem, block cache, FS transactions, versioning                   |
-| 7     | Done   | Syscall ABI, musl libc, fork/exec, busybox shell, record/replay             |
-| 8     | Done   | Hardening (canaries, SMEP/SMAP, guard pages, watchdog, crash dump)          |
-| 9     | Next   | Network stack (TCP/UDP, DHCP, DNS, sockets) --- ships as VeridianOS 1.0     |
+| Phase | Status | Description                                                              |
+|-------|--------|--------------------------------------------------------------------------|
+| 0     | Done   | Boot safety, block-device write protection, foreign-FS detection         |
+| 1     | Done   | Buddy PMM, kernel page tables (kmap/W^X/TLB shootdown), slab allocator   |
+| 2     | Done   | IOAPIC, MSI/MSI-X, interrupt-driven NVMe + AHCI                          |
+| 3     | Done   | Preemptive scheduler, per-CPU run queues, SMP, ticket locks              |
+| 4     | Done   | Full PCI/PCIe enumeration, ECAM, bridge recursion, BAR management        |
+| 5     | Done   | Variable domain memory, demand paging, shared memory IPC                 |
+| 6     | Done   | ext2 filesystem, block cache, FS transactions, snapshot versioning       |
+| 7     | Done   | Syscall ABI, musl libc, fork/exec, busybox shell, record/replay          |
+| 8     | Done   | Hardening (canaries, SMEP/SMAP, guard pages, watchdog, crash dump)       |
+| 9     | Done   | Network stack: ARP, IPv4/v6, ICMP, UDP, TCP+SACK+DSACK, DHCP, DNS, sockets |
+| 9.5   | Done   | IOMMU: Intel VT-d + AMD-Vi DMA remapping + interrupt remapping           |
+| 10    | Next   | Identity + users (capability bundles, login, time-limited caps)          |
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full 12-month plan through 3.0 GA.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full plan through 3.0 GA, including time-travel debugging productization, attested execution, log-shipping live migration, and Linux-as-a-domain.
+
+---
+
+## Documentation
+
+The project ships substantial design and engineering documentation under `docs/`:
+
+- [docs/DOMAIN_ARCHITECTURE.md](docs/DOMAIN_ARCHITECTURE.md) — native vs Linux-guest domains, hybrid composition, IPC layers
+- [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) — formal threat model, mitigation status, in-scope/out-of-scope
+- [docs/HARDENING_INVENTORY.md](docs/HARDENING_INVENTORY.md) — comprehensive catalog of system + hardware hardening
+- [docs/BARE_METAL_MATRIX.md](docs/BARE_METAL_MATRIX.md) — per-platform support matrix with verification status
+- [docs/AUDIT_WAVE_MANIFEST.md](docs/AUDIT_WAVE_MANIFEST.md) — every audit finding mapped to its fix commit
+- [docs/ROADMAP.md](docs/ROADMAP.md) — long-term development plan
+- [docs/AMD_NVME_DIAGNOSIS.md](docs/AMD_NVME_DIAGNOSIS.md) — AMD ROG NVMe driver wedge root-cause writeup
+- [docs/AMD_USB_FIX.md](docs/AMD_USB_FIX.md) — AMD ROG xHCI babble + multi-controller fix writeup
 
 ---
 
@@ -586,15 +642,15 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full 12-month plan through 3.0 GA
 
 VeridianOS combines ideas from several areas of systems research:
 
-- Microkernel isolation (seL4, L4) --- domains communicate via IPC, not shared kernel state.
-- Hardware isolation (Xen, KVM) --- CPU virtualization as the component boundary.
-- Transactional memory (Intel TSX) --- applied at the OS page level via EPT/NPT write-protection.
-- Record / replay (rr, VMware) --- native in the hypervisor; foundation for production time-travel debugging.
-- Preemptive multikernel (Barrelfish) --- per-CPU run queues with IPI-based coordination.
-- Capability systems (KeyKOS, EROS, seL4) --- every privileged hypercall gated by unforgeable tokens.
-- Linux-ABI compatibility (gVisor, Firecracker) --- ~40 syscalls, enough to run musl + busybox.
+- **Microkernel isolation** (seL4, L4) — domains communicate via IPC, not shared kernel state
+- **Hardware isolation** (Xen, KVM, AWS Nitro) — CPU virtualization as the component boundary
+- **Transactional memory** (Intel TSX) — applied at the OS page level via EPT/NPT write-protection
+- **Record / replay** (Mozilla rr, VMware VM replay) — native in the hypervisor; foundation for production time-travel debugging
+- **Preemptive multikernel** (Barrelfish) — per-CPU run queues with IPI-based coordination
+- **Capability systems** (KeyKOS, EROS, seL4) — every privileged hypercall gated by unforgeable tokens
+- **Linux-ABI compatibility** (gVisor, Firecracker) — ~50 syscalls, enough to run musl + busybox
 
-The contribution is unifying EPT/NPT-based isolation with transactions, demand paging, preemptive per-CPU scheduling, a Linux syscall ABI, and deterministic record/replay in a single architecture where the same hardware mechanism provides isolation, enables transactions, and underpins scheduling.
+The contribution is unifying EPT/NPT-based isolation with transactions, demand paging, preemptive per-CPU scheduling, a Linux syscall ABI, deterministic record/replay, IOMMU-enforced device isolation, and Linux-as-a-domain hosting in a single architecture where the same hardware mechanism provides isolation, enables transactions, and underpins scheduling.
 
 ---
 
