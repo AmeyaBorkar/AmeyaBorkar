@@ -1,0 +1,344 @@
+# trader-edge
+
+> Deterministic pre-trade risk engine for Indian equities and F&O. Uses the options chain as a free implied-vol oracle. **No LLMs in the reasoning loop** — every number is closed-form or a numerical op on observable prices. Computes P(stop hit by noise), P(touch implied by options), joint first-passage probabilities, and true expected value in rupees.
+
+**Repository:** [`AmeyaBorkar/trader-edge`](https://github.com/AmeyaBorkar/trader-edge)  
+**Category:** FinTech / Quantitative Risk  
+**Visibility:** Public  
+**Primary language:** Python  
+**Default branch:** `main`  
+**License:** —  
+**Created:** 2026-05-03  
+**Last pushed:** 2026-05-03  
+**Metadata updated:** 2026-05-03  
+**Size (GitHub reported):** 71 KB  
+
+---
+
+## What it is (one-paragraph version)
+
+Deterministic pre-trade risk engine for Indian equities and F&O. Uses the options chain as a free implied-vol oracle. **No LLMs in the reasoning loop** — every number is closed-form or a numerical op on observable prices. Computes P(stop hit by noise), P(touch implied by options), joint first-passage probabilities, and true expected value in rupees.
+
+## Language breakdown
+
+| Language | Bytes | Share |
+|----------|------:|------:|
+| Python | 103,706 | 81.7% |
+| JavaScript | 11,840 | 9.3% |
+| CSS | 7,628 | 6.0% |
+| HTML | 3,793 | 3.0% |
+
+## File tree
+
+- Total entries indexed: **54** (46 files, 8 directories)
+
+```
+.env.example  (2 KB)
+.gitignore  (193 B)
+README.md  (9 KB)
+requirements.txt  (145 B)
+tests/    [10 files]
+  tests/__init__.py
+  tests/test_barrier.py
+  tests/test_black_scholes.py
+  tests/test_env.py
+  tests/test_implied_pdf.py
+  tests/test_journal.py
+  tests/test_pretrade.py
+  tests/test_server.py
+  tests/test_trade_log.py
+  tests/test_volatility.py
+trader_edge/    [32 files]
+  trader_edge/__init__.py
+  trader_edge/analysis/__init__.py
+  trader_edge/analysis/journal.py
+  trader_edge/analysis/pretrade.py
+  trader_edge/analysis/suggestions.py
+  trader_edge/analysis/trade_log.py
+  trader_edge/api/__init__.py
+  trader_edge/api/base.py
+  trader_edge/api/groww_client.py
+  trader_edge/api/mock_provider.py
+  trader_edge/api/models.py
+  trader_edge/cli.py
+  trader_edge/config.py
+  trader_edge/env.py
+  trader_edge/math_core/__init__.py
+  ... and 17 more under trader_edge/
+```
+
+## README (verbatim)
+
+# trader-edge
+
+A deterministic pre-trade risk engine for Indian equities and F&O. Uses the
+options chain as a free oracle for cash-segment trades. **No LLMs in the
+reasoning loop** — every number is a closed-form expression or a numerical
+operation on observable market prices.
+
+## Why this exists
+
+SEBI's 2024 study found that ~89% of individual F&O traders lose money. The
+reason is rarely bad indicators; it's that retail tools surface **prices**,
+not **probabilities**. A trader sees "1:3 R:R" on screen and thinks they have
+edge — when in fact the headline ratio ignores how often the stop will get
+hit by noise, what the options market is implicitly pricing as the chance of
+the target, and the joint dynamics of which level hits first.
+
+`trader-edge` computes the four numbers that change the conversation:
+
+1. **P(stop hit by realized-vol noise alone)** — reflection principle on
+   geometric Brownian motion. If your stop is at noise distance, you will be
+   stopped out by random walk before your thesis has a chance.
+2. **P(touch target/stop) implied by the option chain** — fit IV smile from
+   the chain, run the same first-passage formula at each barrier's IV. This
+   is the market's own forecast.
+3. **Joint first-passage probabilities** — Monte Carlo at implied vol to
+   resolve "who hits first" given both barriers are alive.
+4. **True expected value** — net of brokerage and slippage, in rupees.
+
+The output is a verdict and concrete alternatives: widen this stop, lower
+that target, or skip.
+
+## Install
+
+```
+pip install -r requirements.txt
+```
+
+Python 3.11+. Dependencies: numpy, scipy, requests, click, rich, pytest.
+
+## Use
+
+There are three ways to drive the engine, all backed by the same math core:
+
+1. **CLI** — fastest for ad-hoc analysis. `python -m trader_edge.cli analyze ...`
+2. **REST API** — for integration. `uvicorn trader_edge.server.main:app --reload`
+3. **Web UI** — minimalist newsprint-style frontend served at `/`.
+
+### Mode 1 — pre-trade analysis (CLI)
+
+```
+python -m trader_edge.cli analyze RELIANCE 2850 3000 2800 --days 5 --qty 10
+```
+
+Output:
+
+```
+RELIANCE long bracket — ₹2850.00 -> target ₹3000.00, stop ₹2800.00, 5d
+  NOISE STOP CHECK
+    Realized vol (ann.):   22.1%
+    P(stop hit by noise):  58%
+    Noise-safe stop:       ₹2758.46 (~30% noise hit)
+
+  OPTIONS-CHAIN ORACLE  (expiry 2026-06-03)
+    ATM IV:                22.0%
+    P(touch target):       9%
+    P(touch stop):         58%
+
+  WHO HITS FIRST  (Monte Carlo at implied vol)
+    P(target first):       8%
+    P(stop first):         52%
+
+  EXPECTED VALUE
+    Headline R:R:          3.00:1
+    True R:R (joint):      0.46:1
+    Net EV (real-world):   ₹-17.42/share
+
+ALTERNATIVES
+  1. Widen stop to ₹2758.50  -> EV ₹-13.69
+  2. Realistic target ₹2925   -> EV ₹-3.67
+  3. Skip the trade
+```
+
+### Mode 2 — trade journal
+
+Score recent trades and surface behavioral leaks:
+
+```
+python -m trader_edge.cli journal --days 30
+```
+
+### Inspecting the option chain
+
+```
+python -m trader_edge.cli chain RELIANCE
+```
+
+### Trade log + personal calibration
+
+Every `analyze` call appends a row to `~/.trader_edge/log.csv` (override with
+`TRADER_EDGE_LOG_PATH` or `--no-log` to opt out). After a trade closes, edit
+the CSV and fill in two columns:
+
+- `actual_outcome` — `win`, `loss`, `flat`, or `skipped`
+- `actual_pnl` — realized P&L in rupees (signed)
+
+Then check how well the engine's predictions calibrate against your actual
+results:
+
+```
+python -m trader_edge.cli log              # last 20 entries + summary
+python -m trader_edge.cli log --stats      # calibration only, no table
+```
+
+Once you have ≥5 closed trades, you'll see Pearson correlation between
+predicted EV/share and realized P&L/share. A correlation above 0.3 means the
+engine's edge calls track your real outcomes; below 0 means the model is
+miscalibrated for your universe and you should distrust the numbers.
+
+### REST API + Web UI
+
+Start the server:
+
+```
+uvicorn trader_edge.server.main:app --reload --port 8000
+```
+
+Then:
+
+- **Web UI**: http://localhost:8000/  — analyze a trade, inspect chains, score your journal.
+- **API docs**: http://localhost:8000/docs  — auto-generated OpenAPI reference.
+
+API endpoints (all under `/api/v1`):
+
+| Method | Path                        | Purpose                                   |
+|--------|-----------------------------|-------------------------------------------|
+| GET    | `/health`                   | Server status, active provider, version   |
+| GET    | `/symbols`                  | List of supported symbols                 |
+| POST   | `/analyze`                  | Run pre-trade analysis on a long bracket  |
+| GET    | `/chain/{symbol}`           | Fetch the option chain                    |
+| GET    | `/journal?days=N`           | Score the user's recent orders            |
+
+`POST /analyze` body shape:
+
+```json
+{
+  "symbol": "RELIANCE",
+  "entry": 2850,
+  "target": 3000,
+  "stop": 2800,
+  "horizon_days": 5,
+  "quantity": 10
+}
+```
+
+## Configuration
+
+All configuration is read from environment variables. For local development,
+copy the template and fill in what you need:
+
+```
+cp .env.example .env
+```
+
+Then edit `.env`. The file is git-ignored. The CLI and server both load it
+automatically on startup.
+
+| Variable               | Required | Default              | Purpose                                         |
+|------------------------|----------|----------------------|-------------------------------------------------|
+| `GROWW_ACCESS_TOKEN`   | for live | —                    | Bearer token from Groww developer console       |
+| `TRADER_EDGE_PROVIDER` | no       | `auto`               | Force `mock`, `groww`, or `auto`                |
+| `GROWW_API_BASE_URL`   | no       | `https://api.groww.in` | Override Groww REST base (sandbox or proxy)   |
+
+`auto` resolves to Groww if a token is present, otherwise mock. Real OS env
+vars take precedence over `.env` values, so production deployments can
+override settings without touching the file.
+
+## Connecting your Groww account
+
+1. Generate an access token from your Groww developer console (groww.in →
+   Settings → Trade API → Generate token).
+2. Put it in your `.env`:
+
+   ```
+   GROWW_ACCESS_TOKEN=your_token_here
+   ```
+
+3. Either restart the server, or for the CLI just run any command.
+
+Endpoints called (read-only):
+- `GET /v1/live-data/ltp`
+- `GET /v1/historical/candle/range`
+- `GET /v1/live-data/option-chain`
+- `GET /v1/order/list`
+
+The client is **read-only by design**. Order placement is intentionally
+not exposed.
+
+## Architecture
+
+```
+trader_edge/
+  math_core/
+    volatility.py     # close-to-close, Parkinson, Garman-Klass, EWMA
+    black_scholes.py  # pricing, Greeks, IV inversion (Newton + bisection)
+    barrier.py        # reflection principle + Monte Carlo joint barriers
+    implied_pdf.py    # Breeden-Litzenberger, IV smile fit, prob extraction
+    ev.py             # expected value with brokerage + slippage
+  api/
+    base.py           # DataProvider abstract interface
+    models.py         # Candle, OptionChain, Order
+    groww_client.py   # live REST client
+    mock_provider.py  # offline demo provider
+  analysis/
+    pretrade.py       # mode 1 orchestration
+    suggestions.py    # alternative trade structures
+    journal.py        # mode 2: pair orders, compute leaks
+  cli.py              # click entry points
+tests/                # pytest, 31 tests covering math correctness
+```
+
+## The math, in one paragraph each
+
+**Reflection principle.** For arithmetic Brownian motion `X_t` with drift `m`
+and vol `σ`, the probability that `min X_t ≤ a` over `[0, T]` is
+`Φ((a - mT)/(σ√T)) + exp(2ma/σ²) · Φ((a + mT)/(σ√T))`. We apply it to
+`log(S_t/S_0)` with drift `(μ - σ²/2)`. The closed form is exact; tests
+verify it against a Brownian-bridge-corrected Monte Carlo to within 2.5%.
+
+**Breeden-Litzenberger.** The risk-neutral terminal-price PDF is
+`f(K) = e^{rT} · ∂²C/∂K²`. We fit a quadratic IV smile in log-moneyness from
+the chain, reprice calls on a dense even-spaced grid, take a central-difference
+2nd derivative, clip negatives (numerical noise), and renormalize.
+
+**IV inversion.** Newton-Raphson on Black-Scholes vega, with bisection
+fallback on the no-arbitrage interval. Tested for round-trip exactness on
+calls and puts across moneyness.
+
+**Variance risk premium.** Implied vol embeds a premium over realized;
+typically 3-5 vol points for indices. We subtract this to convert
+risk-neutral probabilities to a real-world approximation, and report both
+side-by-side so you can judge the disagreement.
+
+## Testing
+
+```
+python -m pytest -q
+```
+
+31 tests, ~6s runtime. Math correctness is verified against:
+- Monte Carlo with Brownian-bridge correction (barrier formula)
+- Round-trip BS pricing/IV inversion
+- Synthetic GBM paths (volatility estimators)
+- Hand-computed expected values (EV)
+
+## What this is not
+
+- Not a signal generator. It evaluates *your* trade idea, not its own.
+- Not an order placement tool. Read-only by design.
+- Not financial advice.
+- Not predictive of any single trade outcome — probabilities are
+  distributions, not certainties.
+
+## What's next (if you extend it)
+
+- SVI parametrization for the IV smile (better extrapolation outside listed strikes)
+- Multi-expiry term structure (currently uses nearest expiry only)
+- Spreads and other multi-leg structures (currently single-leg cash + option suggestion)
+- Real-time WebSocket feed (currently REST polling)
+- Portfolio-level Greeks aggregation across open positions
+
+---
+
+*Generated 2026-05-16 from GitHub API. Source of truth: https://github.com/AmeyaBorkar/trader-edge*
