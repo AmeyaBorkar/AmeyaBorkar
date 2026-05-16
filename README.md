@@ -78,20 +78,24 @@ my computer vision stack once helped a drone win a national championship. my bar
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
 | ⚙️ | **VeridianOS** — a microkernel | C · assembly · Intel VT-x / AMD-V · EPT/NPT | 51,000 lines of bare-metal C. every OS component gets its own hardware-enforced memory domain. boots on real dell laptops. i'm still processing this. |
+| 🇮🇳 | **SARVA** — pan-india life utility | Go · Flutter · PostgreSQL+RLS · MQTT · pgvector · OSM | sab kuch. sabke liye. four pillars — samay · parivar · adhikar · awaaz. ~6 direct deps per service. mTLS internally. built like real users are on it day one — because they will be, soon. |
 | 🏦 | full banking system | C · Win32 · multithreading | 15,000 lines. in C. for fun. yes, with a stock market. |
 | 🧱 | **TaskForge-OS** | C · POSIX threads · Win32 | a tiny OS kernel that runs a banking app through actual system calls. schedulers, paging, deadlock prevention — all the fun stuff. |
 | 🔄 | **SyncUp** — file backup + OS suite | C · POSIX threads · multiprocessing | a concurrent directory mirror that's secretly an entire operating systems course in disguise. |
 | 📜 | **PROMETHEUS-Doc** — binarization study | PyTorch · Neural ODEs · ASPP · DINOv2 | ablated every fancy idea on DIBCO. turns out physics-informed ODEs do nothing. wrote that down. |
 | 🧠 | **AdaptaNet** framework | PyTorch · deformable CNN · MoE transformer | dynamic CNN backbone + adaptive transformer + 20+ custom losses. more config knobs than sense. |
+| 🧬 | **Engram** — LLM memory that *consolidates* | Python · PyPI (`engrampy`) · clustering · principled decay | three layers: raw events → mid summaries → consolidated abstractions. surprise/use strengthen, redundancy decays. because "vector db with a search bar" is not memory. |
 | 🎭 | **SGEE** — emotion embeddings | PyTorch · RoBERTa · HuggingFace | anchors transformer representations in VAD (valence-arousal-dominance) psycholinguistic space. contrastive + supervised, two phases. |
 | 💹 | **LexDrift** — SEC filing radar | FastAPI · Next.js · sentence-transformers | detects when companies *suddenly* start sounding different in 10-Ks. finance with extra steps. |
 | 🔮 | **PRISM** — autonomous stock analyst | LLM ReAct loop · TensorFlow · XGBoost · Prophet | AI agent that picks its own research tools and runs them live. watch it think in real time. |
 | 📈 | **Nifty-Pricing-Mirror** | Python · Groww API · rich · Flask | live spot-vs-futures basis surface for NSE indices. tells you when futures are in premium, discount, or flat — refreshed every 3 seconds. |
+| 📊 | **trader-edge** — pre-trade risk engine | Python · NumPy · SciPy · option-chain IV · Monte Carlo | no LLMs in the loop. every number is closed-form or a numerical op on observable prices. tells you when your "1:3 R:R" is actually 1:3 noise. |
 | 📦 | **Tesseract** — cargo X-ray VLM | FastAPI · Qwen2.5-VL-7B · HuggingFace | a vision-language model for customs officers. contraband detection with natural-language reasoning. |
 | 🎵 | **EdgeCAAI-Net** | PyTorch · librosa · gradient reversal | 1.4M-param music genre classifier. accidentally proved everyone's benchmarks were leaking artists. oops. |
 | 🖼️ | **LocateVision** — campus classifier | ResNet-50 · Swin Transformer · Flask | 99.76% accuracy. CNN + transformer with gated attention. served via flask. |
 | 🌲 | smart dictionary & autocomplete | C · BST · AVL · threaded BT | benchmarked three tree structures on 90k words. picked a winner (it's AVL. usually.). |
 | 🚓 | **GridWatch** — emergency dispatch sim | C11 · Fibonacci heaps · suffix arrays · BK-trees · TUI + Flask | sends ambulances around a grid city. every metric on screen is powered by a different data structure. the entire advanced DS syllabus, dressed up as a 911 dispatcher. |
+| 📝 | **markdown-viewer** | Python · FastAPI · tkinter · pure-stdlib markdown engine | one python package, three surfaces — rest api, desktop app, website. no external markdown lib. four hand-tuned themes. |
 | 💬 | whatsapp clone | Java · sockets · Swing · MySQL | wrote a custom TCP protocol because apparently that's a thing i do. |
 | 🌾 | **[elegantlandscape.in](https://elegantlandscape.in)** | vanilla HTML/CSS/JS · canvas · Vercel | live site for a Pune landscape studio. 192-frame scroll-driven canvas animation. zero frameworks, zero build step. |
 
