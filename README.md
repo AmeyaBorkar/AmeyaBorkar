@@ -30,31 +30,68 @@ when i learn something, my first thought is *"okay but what can i build with thi
 
 ## things i've built
 
+sorted the way the repo is — by what they actually are. each one links to a detailed, **code-derived** writeup under [`projects/`](projects/): i read the source (not the readmes), counted the lines myself, and noted where the two disagree.
+
+<br>
+
+### ⚙️ &nbsp;[systems](projects/systems/) &nbsp;·&nbsp; *low-level things that probably shouldn't work, but do*
+
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
-| ⚙️ | **VeridianOS** — a type-1 hypervisor microkernel | C · assembly · Intel VT-x / AMD-V · IOMMU · EPT/NPT | 70,400 lines of bare-metal C across 247 source files. now ships with its own tcp/ip stack. every OS component gets a hardware-enforced memory domain. boots end-to-end on three machines spanning Kaby Lake, Tiger Lake, *and* Zen 5. i'm still processing this. |
-| 🏦 | full banking system | C · Win32 · multithreading | a whole bank with its own stock market and a background price ticker. in C. for fun. |
-| 🧱 | **TaskForge-OS** | C · POSIX threads · Win32 | a tiny OS kernel that runs a banking app through actual system calls. schedulers, paging, deadlock prevention — all the fun stuff. |
-| 🔄 | **SyncUp** — file backup + OS suite | C · POSIX threads · multiprocessing | a concurrent directory mirror that's secretly an entire operating systems course in disguise. |
-| 🇮🇳 | **SARVA** — pan-india life utility | Go · Flutter · PostgreSQL+RLS · MQTT · pgvector · OSM | sab kuch. sabke liye. four pillars — samay · parivar · adhikar · awaaz. ~6 direct deps per service. mTLS internally. built like real users are on it day one — because they will be, soon. |
-| 📜 | **PROMETHEUS-Doc** — binarization study | PyTorch · Neural ODEs · ASPP · DINOv2 | ablated every fancy idea on DIBCO. turns out physics-informed ODEs do nothing. wrote that down. |
-| 🧠 | **AdaptaNet** framework | PyTorch · deformable CNN · MoE transformer | dynamic CNN backbone + adaptive transformer + 20+ custom losses. more config knobs than sense. |
-| 🧬 | **Engram** — LLM memory that *consolidates* | Python · PyPI (`engrampy`) · clustering · principled decay | three layers: raw events → mid summaries → consolidated abstractions. surprise/use strengthen, redundancy decays. because "vector db with a search bar" is not memory. |
-| 🎭 | **SGEE** — emotion embeddings | PyTorch · RoBERTa · HuggingFace | anchors transformer representations in VAD (valence-arousal-dominance) psycholinguistic space. contrastive + supervised, two phases. |
-| 🎵 | **EdgeCAAI-Net** | PyTorch · librosa · gradient reversal | 1.4M-param music genre classifier. accidentally proved everyone's benchmarks were leaking artists. oops. |
-| 🖼️ | **LocateVision** — campus classifier | ResNet-50 · Swin Transformer · Flask | CNN + transformer fused through gated attention. served via flask. |
-| 📦 | **Tesseract** — cargo X-ray VLM | FastAPI · Qwen2.5-VL-7B · HuggingFace | a vision-language model for customs officers. contraband detection with natural-language reasoning. |
-| 💹 | **LexDrift** — SEC filing radar | FastAPI · Next.js · sentence-transformers | detects when companies *suddenly* start sounding different in 10-Ks. finance with extra steps. |
-| 🔮 | **PRISM** — autonomous stock analyst | LLM ReAct loop · TensorFlow · XGBoost · Prophet | AI agent that picks its own research tools and runs them live. watch it think in real time. |
-| 📈 | **Nifty-Pricing-Mirror** | Python · Groww API · rich · Flask | live spot-vs-futures basis surface for NSE indices. tells you when futures are in premium, discount, or flat — refreshed every 3 seconds. |
-| 📊 | **trader-edge** — pre-trade risk engine | Python · NumPy · SciPy · option-chain IV · Monte Carlo | no LLMs in the loop. every number is closed-form or a numerical op on observable prices. tells you when your "1:3 R:R" is actually 1:3 noise. |
-| 🚦 | **throttlekit** — rate limiting for node & the web | TypeScript · GCRA · Redis · Postgres · TLA+ | one decision transform, proven bit-identical across in-memory / Redis / Postgres. fixed-memory DDoS sketches. a fleet-overshoot bound checked in TLA+. on npm. |
-| 🚓 | **GridWatch** — emergency dispatch sim | C11 · Fibonacci heaps · suffix arrays · BK-trees · TUI + Flask | sends ambulances around a grid city. every metric on screen is powered by a different data structure. the entire advanced DS syllabus, dressed up as a 911 dispatcher. |
-| 🌲 | smart dictionary & autocomplete | C · BST · AVL · threaded BT | benchmarked three tree structures behind a word autocompleter. picked a winner (it's AVL. usually.). |
-| 🗺️ | **proximap** — headless geospatial engine | TypeScript · OpenStreetMap · MCP | not a map widget — an engine. nearby-ranking, isochrones, walkability, an errand planner that solves a generalized TSP. ships as a library, a CLI, *and* an MCP server. |
-| 📝 | **markdown-viewer** | Python · FastAPI · tkinter · pure-stdlib markdown engine | one python package, three surfaces — rest api, desktop app, website. no external markdown lib. four hand-tuned themes. |
-| 💬 | whatsapp clone | Java · sockets · Swing · MySQL | wrote a custom TCP protocol because apparently that's a thing i do. |
-| 🌾 | **[elegantlandscape.in](https://elegantlandscape.in)** | vanilla HTML/CSS/JS · canvas · Vercel | live site for a Pune landscape studio. 192-frame scroll-driven canvas animation. zero frameworks, zero build step. |
+| ⚙️ | **[VeridianOS](projects/systems/VeridianOS.md)** — type-1 hypervisor microkernel | C · assembly · VT-x / AMD-V · IOMMU · EPT/NPT | 70,788 lines of bare-metal C. every OS component runs inside its own hardware-isolated VM domain. ships its own tcp/ip stack. boots end-to-end on three laptops spanning Kaby Lake, Tiger Lake *and* Zen 5. i'm still processing this. |
+| 🧱 | **[TaskForge-OS](projects/systems/TaskForge-OS.md)** — an OS in miniature | C · POSIX threads · Win32 | a banking app that talks to a tiny kernel through "system calls." schedulers, paging, deadlock detection — the whole OS-course greatest-hits album. |
+| 🔄 | **[SyncUp](projects/systems/SyncUp.md)** — concurrent file backup | C · pthreads · slab allocator | a directory mirror that's secretly an entire operating-systems course. worker pool, custom allocator, resource-allocation-graph deadlock tracking. |
+| 🚓 | **[GridWatch](projects/systems/GridWatch.md)** — emergency dispatch sim | C11 · Fibonacci heaps · suffix arrays · BK-trees · TUI + Flask | sends ambulances around a grid city. every number on screen is powered by a different advanced data structure. the whole DS syllabus, cosplaying as a 911 dispatcher. |
+| 📚 | **[OS-Exam-Prep](projects/systems/OS-Exam-Prep.md)** — study SPA | stdlib Python → static HTML/JS | compiles markdown notes into a zero-dependency single-page site. 62 model answers, 20 mind maps, not a single framework. |
+| 🌲 | **[Smart-Dictionary](projects/systems/Smart-Dictionary.md)** — autocomplete + tree benchmark | C · BST · AVL · threaded BT | benchmarked three tree structures behind a word autocompleter. picked a winner. (it's AVL. it's usually AVL.) |
+
+### 🧠 &nbsp;[ml-research](projects/ml-research/) &nbsp;·&nbsp; *teaching machines to do things, then writing down what didn't work*
+
+| | what | with what | the twist |
+|:--:|------|-----------|-----------|
+| 📜 | **[PROMETHEUS](projects/ml-research/PROMETHEUS.md)** — binarization study | PyTorch · Neural ODEs · DINOv2 · ASPP | ablated every fancy idea on DIBCO. the physics-informed ODE made it *worse*. wrote that down. the boring patch-extraction trick is what actually won. |
+| 🧠 | **[AdaptaNet](projects/ml-research/AdaptaNet.md)** — adaptive vision framework | PyTorch · deformable CNN · MoE transformer | dynamic backbone + mixture-of-experts transformer + a dozen custom losses. more config knobs than sense. |
+| 🎭 | **[SGEE](projects/ml-research/SGEE.md)** — emotion embeddings | PyTorch · RoBERTa · NRC-VAD | anchors transformer representations in valence-arousal-dominance space. contrastive grounding stacked on supervised heads. |
+| 🎵 | **[EdgeCAAI-Net](projects/ml-research/EdgeCAAI-Net.md)** — music genre classifier | PyTorch · torchaudio · gradient reversal | 1.42M params. accidentally proved the benchmarks were leaking artists between train and test — 559 of 765 of them. oops. |
+| 🧬 | **[Engram](projects/ml-research/Engram.md)** — LLM memory that *consolidates* | Python · PyPI (`engrampy`) · clustering · principled decay | raw events → summaries → abstractions. use strengthens, redundancy decays on a closed-form curve. because "vector db with a search bar" is not memory. |
+| 🖼️ | **[LocateVision](projects/ml-research/LocateVision.md)** — campus classifier | ResNet-50 · Swin Transformer · Flask | fuses a CNN and a transformer through a learned gate. served behind a small web UI. |
+| 📦 | **[Tesseract](projects/ml-research/Tesseract.md)** — cargo X-ray VLM | FastAPI · Qwen2.5-VL-7B · HuggingFace | a vision-language model for customs officers. natural-language contraband reasoning, with a python risk-scorer doing the math the model won't. |
+
+### 💹 &nbsp;[finance](projects/finance/) &nbsp;·&nbsp; *money, but make it numerical*
+
+| | what | with what | the twist |
+|:--:|------|-----------|-----------|
+| 📊 | **[trader-edge](projects/finance/trader-edge.md)** — pre-trade risk engine | Python · NumPy · SciPy · option-chain IV · Monte Carlo | no LLMs in the loop. black-scholes, IV inversion, barrier first-passage, a 25k-path monte carlo. tells you when your "1:3 R:R" is actually 1:3 noise. |
+| 📈 | **[Nifty-Pricing-Mirror](projects/finance/Nifty-Pricing-Mirror.md)** — basis surface | Python · Groww API · rich · Flask | live spot-vs-futures basis for NSE indices, refreshed every 3s. premium, discount, or flat — in a terminal table. |
+| 🔮 | **[PRISM](projects/finance/PRISM.md)** — autonomous stock analyst | LLM ReAct loop · Groq · XGBoost · Prophet | an agent that picks its own research tools and runs them live, then an ML ensemble argues with it. watch it think in real time. |
+| 💹 | **[LexDrift](projects/finance/LexDrift.md)** — SEC filing radar | FastAPI · Next.js · sentence-transformers | detects when companies *suddenly* start sounding different in their 10-Ks. drift, by cosine distance. finance with extra steps. |
+
+### 🚦 &nbsp;[infra](projects/infra/) &nbsp;·&nbsp; *one product, three repos, a formal proof*
+
+| | what | with what | the twist |
+|:--:|------|-----------|-----------|
+| 🚦 | **[throttlekit](projects/infra/throttlekit.md)** — rate limiting for node & the web | TypeScript · GCRA · Redis · Postgres · TLA+ | one decision transform, proven bit-identical across in-memory / Redis / Postgres. fixed-memory DDoS sketches. a fleet-overshoot bound checked in *TLA+*. zero deps, on npm. |
+| 🐍 | **[throttlekit-py](projects/infra/throttlekit-py.md)** — the python client | Python · gRPC · Redis Lua | same decisions from python — over gRPC to the node core, or running the core's own Lua directly. conformance-proven on shared golden vectors. |
+| 🌗 | **[throttlekit-site](projects/infra/throttlekit-site.md)** — the pitch | Astro | "meter what your LLM spends, prove what your fleet admits." docs synced straight out of the monorepo. |
+
+### 🌐 &nbsp;[web](projects/web/) &nbsp;·&nbsp; *things that run in a browser, mostly without a build step*
+
+| | what | with what | the twist |
+|:--:|------|-----------|-----------|
+| 🗺️ | **[proximap](projects/web/proximap.md)** — headless geospatial engine | TypeScript · OpenStreetMap · MCP | not a map widget — an engine. nearby-ranking, isochrones, walkability, and an errand planner that solves a generalized TSP with exact held-karp DP. ships as a library, a CLI, *and* an MCP server. |
+| 📝 | **[markdown-viewer](projects/web/markdown-viewer.md)** — one package, three surfaces | Python · FastAPI · tkinter · pure-stdlib markdown engine | rest api, desktop app, website — all off a hand-written markdown engine. no external markdown lib. four hand-tuned themes. |
+| 🔤 | **[FontVisualizer](projects/web/FontVisualizer.md)** — type specimen tool | vanilla JS | 132 google fonts, live preview, an HSV color wheel, and a full-screen "studio board." one html file, no build. |
+| 🌾 | **[elegantlandscape.in](projects/web/Elegant-Landscape.md)** — live studio site | vanilla HTML/CSS/JS · canvas · Vercel | a real site for a Pune landscape studio. 192-frame scroll-driven canvas animation. zero frameworks, zero build step. |
+
+### 📱 &nbsp;[apps](projects/apps/) &nbsp;·&nbsp; *the ones real people might actually open*
+
+| | what | with what | the twist |
+|:--:|------|-----------|-----------|
+| 🇮🇳 | **[SARVA](projects/apps/SARVA.md)** — pan-india life utility | Go · Flutter · PostgreSQL + RLS | sab kuch. sabke liye. four pillars — samay · parivar · adhikar · awaaz. foundation's laid: RS256 auth, argon2id OTPs, row-level security on every table. the rest is going up like real users land tomorrow — because they will. |
+| 🏦 | **[BankSystem](projects/apps/BankSystem.md)** — banking in a terminal | C · Win32 console · multithreading | a whole bank with its own stock market and a background price ticker. in C. for fun. yes, really. |
+| 💬 | **[JavaChat](projects/apps/JavaChat.md)** — whatsapp clone | Java · sockets · Swing · MySQL | wrote a custom TCP protocol because apparently that's a thing i do. thread-per-client, member-scoped delivery, offline reconciliation. |
+| 📑 | **[ExcelLinker](projects/apps/ExcelLinker.md)** — sheet joiner | Python · pandas · tkinter | point it at two spreadsheets, pick the key columns, get one dataset. a friendly GUI over a pandas join. |
+| 🩺 | **[Personal-Health-Assistant](projects/apps/Personal-Health-Assistant.md)** — AI nutrition coach | Flask · React · Cerebras · Llama-4 | a full-stack coach that plans meals and workouts. JWT auth, SQLite, an LLM doing the talking. |
 
 <br>
 
@@ -76,9 +113,9 @@ when i learn something, my first thought is *"okay but what can i build with thi
 
 <div align="center">
 
-[![Languages](https://skillicons.dev/icons?i=python,c,cpp,java,js,mysql&theme=dark)](https://skillicons.dev)
+[![Languages](https://skillicons.dev/icons?i=python,c,cpp,java,go,ts,js,mysql&theme=dark)](https://skillicons.dev)
 
-[![Web/Backend](https://skillicons.dev/icons?i=nextjs,react,nodejs,express,fastapi,flask,supabase,docker&theme=dark)](https://skillicons.dev)
+[![Web/Backend](https://skillicons.dev/icons?i=nextjs,react,nodejs,express,fastapi,flask,astro,redis,postgres,docker&theme=dark)](https://skillicons.dev)
 
 [![AI/ML](https://skillicons.dev/icons?i=pytorch,tensorflow,opencv&theme=dark)](https://skillicons.dev)
 
