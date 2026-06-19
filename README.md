@@ -7,7 +7,7 @@
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ameya-borkar-69b947381)
 [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=firefox&logoColor=58a6ff)](https://ameyaborkar-60d8c.web.app)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:ameyaborkar17@gmail.com)
-[![Profile Views](https://komarev.com/ghpvc/?username=AmeyaBorkar&color=58a6ff&style=flat-square&label=people+who+ended+up+here)](https://github.com/AmeyaBorkar)
+[![Profile Views](https://visitor-badge.laobi.icu/badge?page_id=AmeyaBorkar.AmeyaBorkar&left_text=people%20who%20ended%20up%20here&right_color=58a6ff)](https://github.com/AmeyaBorkar)
 
 </div>
 
