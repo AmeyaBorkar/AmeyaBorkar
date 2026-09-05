@@ -5,7 +5,7 @@
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=800&color=58A6FF&center=true&vCenter=true&width=800&lines=wrote+a+70k-line+hypervisor+microkernel+·+for+fun+·+it+boots.;taught+a+drone+to+see+things.+it+won+nationally.;yes%2C+i+beatbox.+no%2C+you+cannot+hear+it.;barbell+in+the+morning+·+keyboard+at+night.)](https://git.io/typing-svg)
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ameya-borkar-69b947381)
-[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=firefox&logoColor=58a6ff)](https://ameyaborkar-60d8c.web.app)
+[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=firefox&logoColor=58a6ff)](https://www.ameyaborkar.in/)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:ameyaborkar17@gmail.com)
 
 </div>
