@@ -23,7 +23,7 @@ when i learn something, my first thought is *"okay but what can i build with thi
 > wrote a banking system in C — stock market and all — just to see if i could. i could.
 > so i wrote a 70,000-line hypervisor microkernel next. it boots on three different laptops.
 
-🌐 &nbsp;[ameyaborkar-60d8c.web.app](https://ameyaborkar-60d8c.web.app)
+🌐 &nbsp;[ameyaborkar.in](https://www.ameyaborkar.in/)
 
 <br>
 
