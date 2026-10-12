@@ -1,6 +1,6 @@
 # throttlekit-py
 
-> The Python client for **ThrottleKit**, the TS/Node distributed rate-limiting core. It re-implements **no** rate-limiting math: every `Decision` comes from the one Node core, reached through one of two pluggable doors — **`ServiceBackend`** (gRPC to a `throttlekit-server`, full `check`/`check_many`/`peek`/`forecast`/`debit`/`admit` surface) or **`RedisBackend`** (the core's own *vendored* Lua run directly against the same Redis a Node fleet uses, `check` only, bit-identical). Bit-identical behavior vs. the core is *proven*, not asserted: the direct path replays the core's full time-parametrized golden vectors through real Redis and matches the Node oracle field-for-field. Ships sync + async twins of every door, Tier-2 fleet leasing (`FleetBackend`/`LeaseSpender`), a read-only `MonitorBackend`, and FastAPI/Starlette/Django/Flask integrations.
+> The Python client for **ThrottleKit**, the TS/Node distributed rate-limiting core. It re-implements **no** rate-limiting math: every `Decision` comes from the one Node core, reached through one of two pluggable doors — **`ServiceBackend`** (gRPC to a `throttlekit-server`, full `check`/`check_many`/`peek`/`forecast`/`debit`/`admit` surface) or **`RedisBackend`** (the core's own *vendored* Lua run directly against the same Redis a Node fleet uses, `check` only, bit-identical). Bit-identical behavior vs. the core is *proven*, not asserted: the direct path replays the core's full time-parametrized golden vectors through real Redis and matches the Node oracle field-for-field. Ships sync + async twins of every door, Tier-2 fleet leasing (`FleetBackend`/`LeaseSpender`), a read-only `MonitorBackend`, and FastAPI/Starlette/Django/Flask integrations. Since June it has had only a performance patch (0.5.1); its vendored copy of the core's wire contract has not been re-synced since the core's 1.6.0 wire change.
 
 | | |
 |---|---|
@@ -10,12 +10,12 @@
 | **Primary language(s)** | Python (3.10+); Lua (the vendored Redis scripts); Protobuf (the wire contract) |
 | **Local path** | `C:\Users\ameya\Documents\throttlekit-py` |
 | **Default branch** | `main` |
-| **Lines of code** (computed, tracked, generated `*_pb2*` excluded) | **2,617** Python in `src/throttlekit/` · **2,469** Python in `tests/` · ~5,623 Python total (src + tests + scripts + examples) · **173** lines of Lua (10 scripts) · **345** lines `throttlekit.proto` · **1,404** lines `golden-vectors.json` |
-| **Source files** (computed) | **23** Python modules in `src/throttlekit/` (incl. 5 in `contrib/`) · **18** test modules · **3** scripts · **6** example scripts · **10** vendored `.lua` · 1 `.proto` |
-| **PyPI package** | Dist name **`throttlekit-py`**, import name **`throttlekit`** (PyPI's `throttlekit` is an unrelated project). **Published** — latest **0.5.0**; all of `0.1.0, 0.2.0, 0.2.1, 0.3.0, 0.4.0, 0.5.0` are live (HTTP 200, verified against pypi.org). `pyproject.version` = `0.5.0`; classifier `Development Status :: 3 - Alpha`. |
-| **Key dependencies** | Runtime: `grpcio>=1.60`, `protobuf>=6.31.1,<7`. Optional extras: `redis>=5` (`[redis]`), `fastapi`/`starlette`/`django`/`flask` (one extra each, `[all]` for all four). Build: `hatchling` + `grpcio-tools~=1.80.0` (pinned). Dev: `pytest>=8`, `ruff==0.15.15` (exact-pinned), `mypy>=1.11`, `httpx>=0.27`. |
+| **Lines of code** (computed, tracked, generated `*_pb2*` excluded) | **2,663** Python in `src/throttlekit/` (+46 since June) · **2,469** Python in `tests/` (unchanged) · ~5,669 Python across src + tests + scripts + examples + `hatch_build.py` (5,762 incl. the new 93-line `bench/micro.py`) · **173** lines of Lua (10 scripts) · **345** lines `throttlekit.proto` · **1,404** lines `golden-vectors.json` |
+| **Source files** (computed) | **23** Python modules in `src/throttlekit/` (incl. 5 in `contrib/`) · **18** test modules · **3** scripts · **6** example scripts · **1** bench script (new) · **10** vendored `.lua` · 1 `.proto` |
+| **PyPI package** | Dist name **`throttlekit-py`**, import name **`throttlekit`** (PyPI's `throttlekit` is an unrelated project). **Published**. The latest is **0.5.1** (uploaded 2026-06-30), and all seven releases are live: `0.1.0, 0.2.0, 0.2.1, 0.3.0, 0.4.0, 0.5.0, 0.5.1` (verified against pypi.org JSON). `pyproject.version` = `_version.__version__` = `0.5.1`; classifier `Development Status :: 3 - Alpha`. |
+| **Key dependencies** | Runtime: `grpcio>=1.60`, `protobuf>=6.31.1,<7`. Optional extras: `redis>=5` (`[redis]`), `fastapi`/`starlette`/`django`/`flask` (one extra each, `[all]` for all four). Build: `hatchling` + `grpcio-tools~=1.80.0` (pinned). Dev: `pytest>=8`, `ruff==0.15.15` (exact-pinned), `mypy>=1.11`, `httpx>=0.27`. (Unchanged since June.) |
 | **License** | MIT (`Copyright (c) 2026 Ameya Borkar`) |
-| **Last commit** | `4ea7029` — *"style: ruff format tests/test_fleet_backend.py"* (2026-06-10) |
+| **Last commit** | `d826cb1` — *"chore(release): throttlekit-py 0.5.1"* (2026-06-30, tag `v0.5.1`; matches GitHub `main`, last push 2026-06-30). 54 commits total, 7 since the June doc. |
 
 ---
 
@@ -26,9 +26,17 @@ A pure-Python **client library** for ThrottleKit. It contains *no rate-limiting 
 Two doors reach that one core:
 
 1. **`ServiceBackend`** (`service_backend.py`) — a thin gRPC client speaking `throttlekit.v1.RateLimiter`. The service (running the same Node core) computes every decision; the client decodes the reply into frozen `Decision` / `Forecast` dataclasses. Full surface: `check`, `check_many`, `peek`, `forecast`, `debit` (token-budget cost axis), `admit` (concurrency / unified axis with held-slot lease lifecycle).
-2. **`RedisBackend`** (`redis_backend.py`) — runs the core's **vendored Lua** (`src/throttlekit/_scripts/*.lua`) directly against the same Redis a Node fleet uses. Exposes **`check` only**, by design (see below). Decisions are bit-identical to an embedded Node library because it executes the *identical script bytes*.
+2. **`RedisBackend`** (`redis_backend.py`) — runs the core's **vendored Lua** (`src/throttlekit/_scripts/*.lua`) directly against the same Redis a Node fleet uses. Exposes **`check` only**, by design (see below). Decisions are bit-identical to an embedded Node library because it executes the *identical script bytes*. This holds as long as the vendored copy matches the core's current scripts, which is no longer true for one script (see "Where it sits").
 
 On top of those, 0.5.0 added: **`FleetBackend`** + `LeaseSpender` + `LeasedLimiter` (Tier-2 client-held leasing over `Fleet.Reserve`), a read-only **`MonitorBackend`**, `asyncio` twins of every door, and `throttlekit.contrib.*` web-framework adapters.
+
+**0.5.1 (2026-06-30)** is a per-call performance patch. It was this repo's share of the cross-repo performance sweep that also produced core 1.6.1 and server 0.4.4. The changelog states that decisions and the lease golden-vector replay are unchanged:
+- `slots=True` on the per-call frozen dataclasses (`Decision`, `Forecast`, `Lease`, `LeaseGrant`), with a stated instance footprint of 160 → 72 B;
+- a Redis ARGV template precomputed once per backend;
+- an inlined lease-spend cost guard;
+- adapter checkers classified as sync or async once at construction instead of per request.
+
+There are no new features and no new tests. A stdlib micro-benchmark (`bench/micro.py`) was added to measure the changes.
 
 Despite the prompt's framing as a single-purpose client, the working tree is a fairly complete client SDK: **23 source modules** spanning six client classes (× sync/async), five strategy configs, an HTTP-headers helper, a framework-agnostic decorator, and four framework integrations.
 
@@ -36,18 +44,31 @@ Despite the prompt's framing as a single-purpose client, the working tree is a f
 
 Part of a three-repo family:
 
-- **`throttlekit`** — the TS/Node core (npm `throttlekit`), the **one oracle**. Owns the algorithms (GALE distributed leasing, TALE token-budget escrow), the Lua scripts, the gRPC `throttlekit-server`, and the language-neutral wire contract (proto + golden vectors) under its `wire/` tree.
+- **`throttlekit`** — the TS/Node core (npm `throttlekit`, now **1.7.0**), the **one oracle**. Owns the algorithms (GALE distributed leasing, TALE token-budget escrow), the Lua scripts, the gRPC `throttlekit-server` (npm, **0.4.4**), and the language-neutral wire contract (proto + golden vectors) under its `wire/` tree.
 - **`throttlekit-py`** *(this repo)* — a *consumer* of that contract. It **vendors** the core's artifacts with sha256 checksums (`scripts/sync_contract.py`) so the two repos cannot silently drift, and reaches the core either over gRPC (the service door) or by running the core's own Lua directly (the Redis door).
-- **`throttlekit-site`** — the Astro marketing/docs site (throttlekit.in).
+- **`throttlekit-site`** — the Astro marketing/docs site (throttlekit.in), which lists this package at 0.5.1.
 
 The relationship is explicitly encoded in code: `pyproject.toml` links `"Core (Node)" = "https://www.npmjs.com/package/throttlekit"`; `sync_contract.py` defaults its `--source` to a sibling `../GreenfeildProject` checkout (the core's local dev name) or `$THROTTLEKIT_REPO`; `manifest.json` records `"generatedFrom": "throttlekit@1.0.1"` and the golden vectors `"generatedFrom": "throttlekit@1.4.0"`. The README points to the core repo's `research/polyglot/battle-test` as the cross-repo proof that drives both backends against a real 3-server fleet.
+
+**Contract drift since June (new).** `sync_contract.py` has not been re-run since the core's 1.6.0 wire changes. A byte comparison against the core's `wire/` at v1.7.0 shows three differences:
+
+| Vendored artifact | vs. core `wire/` @ 1.7.0 |
+|---|---|
+| 9 of 10 `_scripts/*.lua` | identical sha256 |
+| `slidingWindowLog.check.lua` | **differs**: py `9345973d…` vs core `8c108984…`. The core now charges `math.ceil(cost)` whole units. The vendored script loops `for i = 1, cost`, which for a fractional `cost < 1` adds no log entries and over-admits. |
+| `contract/golden-vectors.json` | **differs**: py has the 1.4.0 set with `rateLimit` ops at `now=0`; the core has the 1.5.2-stamped set with ops moved off zero. |
+| `contract/throttlekit.proto` | differs only in a comment (the `AdmitRequest.cost` note); wire-compatible. |
+
+Practical impact is narrow. `RedisBackend.check` is typed `cost: int` (not runtime-checked), and for integer costs both scripts produce the same decisions. Two consequences remain:
+- A Python client and a Node ≥1.6 fleet now load *different* `slidingWindowLog` script bytes. They no longer share one `EVALSHA` cache entry for that strategy, and they diverge if a non-integer cost reaches the Lua.
+- The drift gate (`test_contract.py`) only checks the vendored files against this repo's own manifests. Cross-repo drift therefore does not fail CI, and it went unnoticed.
 
 ## Architecture & how it's structured (gRPC path vs direct-Redis path)
 
 The two paths share `Decision`/`Forecast` domain objects and the error taxonomy, but nothing else:
 
 - **gRPC path:** `ServiceBackend` → generated stubs (`_generated/throttlekit_pb2*`) → `throttlekit-server` → Node core → store (memory / Redis / Postgres / DynamoDB). The client never touches raw Lua; the proto is the only contract it depends on. Math lives entirely server-side.
-- **Direct-Redis path:** `RedisBackend` → `_contract.script()` loads vendored Lua + ARGV order from `manifest.json` → `EVALSHA`/`EVAL` against Redis → Redis runs the Lua. Math lives in the Lua (which is the core's own script, vendored byte-for-byte).
+- **Direct-Redis path:** `RedisBackend` → `_contract.script()` loads vendored Lua + ARGV order from `manifest.json` → (0.5.1) a precomputed ARGV template with only `now`/`cost` written per call → `EVALSHA`/`EVAL` against Redis → Redis runs the Lua. Math lives in the Lua (which is the core's own script, vendored byte-for-byte at sync time).
 
 Annotated tree (generated/cache dirs omitted):
 
@@ -55,20 +76,20 @@ Annotated tree (generated/cache dirs omitted):
 throttlekit-py/
 ├── contract/                         # DEV/TEST artifacts (not shipped in the wheel)
 │   ├── throttlekit.proto             # 345 lines — the v1 wire contract → gRPC stubs
-│   ├── golden-vectors.json           # 1404 lines — 18 suites: rateLimit, tokenBudget, lease
+│   ├── golden-vectors.json           # 1404 lines — 18 suites: rateLimit, tokenBudget, lease (1.4.0 set)
 │   └── manifest.sha256               # sha256 of proto + vectors (drift-gate)
 ├── src/throttlekit/
 │   ├── __init__.py                   # public API; LAZY backend imports (grpc/redis optional)
-│   ├── _version.py                   # __version__ = "0.5.0"
-│   ├── decision.py                   # frozen Decision / Forecast dataclasses (5 + 3 fields)
+│   ├── _version.py                   # __version__ = "0.5.1"
+│   ├── decision.py                   # frozen, slotted Decision / Forecast dataclasses (5 + 3 fields)
 │   ├── errors.py                     # ThrottleKitError + 3 operational subclasses (grpc-free)
 │   ├── strategies.py                 # Gcra/TokenBucket/FixedWindow/SlidingWindow/SlidingWindowLog + from_spec
 │   ├── _contract.py                  # loads vendored Lua + ARGV order; computes sha1 for EVALSHA
 │   ├── _grpc.py                      # shared stub-import guard + gRPC→exception mapping (Fleet/Monitor)
 │   ├── service_backend.py            # gRPC ServiceBackend + Admission + _HeartbeatPump (sync)
 │   ├── service_backend_async.py      # grpc.aio twin
-│   ├── redis_backend.py              # direct Lua RedisBackend (check only, sync)
-│   ├── redis_backend_async.py        # redis.asyncio twin (reuses _decode/_is_noscript)
+│   ├── redis_backend.py              # direct Lua RedisBackend (check only, sync) + _argv_plan template
+│   ├── redis_backend_async.py        # redis.asyncio twin (reuses _argv_plan/_decode/_is_noscript)
 │   ├── fleet_backend.py              # Tier-2 FleetBackend + Lease + LeasedLimiter (sync)
 │   ├── fleet_backend_async.py        # async twin
 │   ├── lease_spender.py              # PURE port of the core's leased L1 spend (no transport)
@@ -87,6 +108,8 @@ throttlekit-py/
 │   ├── sync_contract.py              # vendors proto+vectors+Lua from the core repo, sha256-pinned
 │   ├── gen_proto.py                  # grpc_tools.protoc → src/throttlekit/_generated/ (git-ignored)
 │   └── check_wheel_stubs.py          # CI: assert stubs are inside the built wheel
+├── bench/
+│   └── micro.py                      # NEW (0.5.1): stdlib best-of-N ns/op for Decision() + LeaseSpender.spend
 ├── examples/                         # 6 runnable scripts + policies.yaml
 ├── tests/                            # 18 modules, 2469 lines
 ├── hatch_build.py                    # custom build hook: generate gRPC stubs into the wheel
@@ -100,19 +123,19 @@ Note `src/throttlekit/_generated/` (the `throttlekit_pb2.py` / `throttlekit_pb2_
 
 **`__init__.py`** — defines `__all__` and routes backend names through a `__getattr__` **lazy loader** (`_LAZY` dict). `import throttlekit` therefore needs *neither* grpc nor a redis client; the heavy backends are imported only on first attribute access. Eagerly importable surface = the strategies, domain types, errors, and the dependency-light ergonomics (`decision_headers`, `rate_limit`, `bind_policy`, `Checker`, `RateLimited`).
 
-**`decision.py`** — frozen `Decision(allowed, limit, remaining, reset_at, retry_after_ms)` (the five frozen core fields) and `Forecast(spendable_now, next_replenish_at, full_at)`. snake_case to match Python protobuf; JSON vectors' camelCase keys are mapped explicitly where consumed.
+**`decision.py`** — frozen `Decision(allowed, limit, remaining, reset_at, retry_after_ms)` (the five frozen core fields) and `Forecast(spendable_now, next_replenish_at, full_at)`. snake_case to match Python protobuf; JSON vectors' camelCase keys are mapped explicitly where consumed. Since 0.5.1 both are `@dataclass(frozen=True, slots=True)`, which drops the per-instance `__dict__`. The same change was applied to `Lease` (`fleet_backend.py`) and `LeaseGrant` (`lease_spender.py`).
 
 **`strategies.py`** — five frozen dataclasses (`Gcra`, `TokenBucket`, `FixedWindow`, `SlidingWindow`, `SlidingWindowLog`), each declaring a `kind` ClassVar and a `params()` returning **manifest ARGV names** (camelCase, e.g. `periodMs`) → configured values. Pure config, **no math**. `from_spec(kind, options)` is the bridge the conformance harness uses to build a strategy from a golden-vector `strategy.{kind, options}` spec.
 
 **`_contract.py`** — loads `_scripts/manifest.json` and the `*.lua` beside it. `script(strategy, role)` returns a frozen `Script` carrying source, ordered `argv` (from the manifest — the wire is the source of truth for marshalling), and **`sha1(source)` hex** (the key Redis uses for `EVALSHA`). Cached. The wire `contractVersion` is exposed via `contract_version()`.
 
-**`redis_backend.py`** — the direct door. `check(key, cost=1, now=None)`: looks up the `check` script, builds a `values` dict `{now, cost, **strategy.params()}`, projects it into `argv` in the manifest's order, prefixes the key (`f"{prefix}:{key}"`), and runs it. `_eval` tries `EVALSHA` first and falls back to `EVAL` on `NOSCRIPT` (detected client-agnostically by `_is_noscript`, mirroring the Node store's `isNoScript`). `_decode` reads the five-int reply tuple. `now=None` sends the sentinel `0` → the Lua uses the **Redis server clock** (`redis.call('TIME')`), the skew-free fleet default.
+**`redis_backend.py`** — the direct door. In 0.5.1, `_argv_plan(strategy)` resolves the strategy's frozen `check` ARGV once at construction into a template tuple, with constant params filled in and `now`/`cost` left as placeholders, plus the indices of those two slots. It raises if the manifest's ARGV lacks either slot. `check(key, cost=1, now=None)` copies the template and writes the two slots. The docstring states that the result is byte-identical to the old per-call `[values[name] for name in script.argv]`. The call then prefixes the key (`f"{prefix}:{key}"`) and runs it. `_eval` tries `EVALSHA` first and falls back to `EVAL` on `NOSCRIPT` (detected client-agnostically by `_is_noscript`, mirroring the Node store's `isNoScript`). `_decode` reads the five-int reply tuple. `now=None` sends the sentinel `0` → the Lua uses the **Redis server clock** (`redis.call('TIME')`), the skew-free fleet default. The async twin imports and reuses `_argv_plan`.
 
 **`service_backend.py`** — the gRPC door. Each RPC wraps the stub call and maps `grpc.RpcError` to operational exceptions via `_mapped` (`NOT_FOUND`→`PolicyNotFoundError`, `UNIMPLEMENTED`→`OperationNotSupportedError`, `UNAVAILABLE`→`ServiceUnavailableError`). A *denial* is a normal `Decision`, never an error. `admit()` returns an `Admission` context manager holding a server lease; `_HeartbeatPump` is a lazily-started daemon thread that batches `Heartbeat` for opt-in long holds and marks reclaimed leases.
 
-**`lease_spender.py`** — a **pure, transport-free** port of the core's `twoTier(leased, windowCoupled)` L1 path: `apply_lease` adds a grant's capacity; `spend(now, cost)` serves from local credits (synthesizing an allow, byte-identical to the core's `synthAllow`) or returns `None` ("refresh needed") — it **never synthesizes a denial**. The window-coupled discard zeroes leftover credits at the window boundary. `now` injected per call for determinism.
+**`lease_spender.py`** — a **pure, transport-free** port of the core's `twoTier(leased, windowCoupled)` L1 path: `apply_lease` adds a grant's capacity; `spend(now, cost)` serves from local credits (synthesizing an allow, byte-identical to the core's `synthAllow`) or returns `None` ("refresh needed") — it **never synthesizes a denial**. The window-coupled discard zeroes leftover credits at the window boundary. `now` injected per call for determinism. 0.5.1 inlined the cost guard into `spend` to drop a stack frame. Its comment still says the guard mirrors "the core's `requireCost` exactly", but core 1.7.0's `requireCost` also rejects `cost > Number.MAX_SAFE_INTEGER` (finding F3), which the Python guard does not.
 
-**`ratelimit.py`** — the `Checker` protocol (`key -> Decision | Awaitable[Decision]`), `bind_policy(backend, policy)` (turns a service backend into a checker; preserves sync/async nature), and the `rate_limit` decorator that works on both sync and `async def` functions (detected via a custom `_is_async_callable` that also catches async-`__call__` callable classes). On denial it raises `RateLimited` (deliberately **not** a `ThrottleKitError` — a denial is the backend succeeding).
+**`ratelimit.py`** — the `Checker` protocol (`key -> Decision | Awaitable[Decision]`), `bind_policy(backend, policy)` (turns a service backend into a checker; preserves sync/async nature), and the `rate_limit` decorator that works on both sync and `async def` functions (detected via a custom `_is_async_callable` that also catches async-`__call__` callable classes). On denial it raises `RateLimited` (deliberately **not** a `ThrottleKitError` — a denial is the backend succeeding). In 0.5.1 the FastAPI and Starlette adapters classify the checker's sync or async nature once, when the adapter is built, instead of on every request.
 
 ## The two transports
 
@@ -124,17 +147,19 @@ Note `src/throttlekit/_generated/` (the `throttlekit_pb2.py` / `throttlekit_pb2_
 - **`Monitor`** — `GetSnapshot` and a server-streaming `Watch` (live denial feed). Read-only, loopback-only by default unless a `x-monitor-secret` is presented.
 - **`Fleet`** — `Reserve` (one unary RPC in v1) for Tier-2 client-held leasing; `x-fleet-secret`-gated. Carries an `Axis` enum (`RATE`/`CONCURRENCY`/`TOKEN_BUDGET`).
 
-**Client coverage of the proto** (a real gap to note): the clients implement `Check`/`CheckMany`/`Peek`/`Forecast`/`Debit`/`Admit`/`Release`/`Heartbeat` (`ServiceBackend`), `GetSnapshot` (`MonitorBackend`), and `Reserve` (`FleetBackend`). The streaming **`Watch` RPC is defined in the proto but not implemented** in either `MonitorBackend` or `MonitorBackend` async — only `get_snapshot` exists. `MonitorSnapshot` decodes the typed envelope and exposes the full `raw_json` via `.parsed()`.
+**Client coverage of the proto** (a real gap to note): the clients implement `Check`/`CheckMany`/`Peek`/`Forecast`/`Debit`/`Admit`/`Release`/`Heartbeat` (`ServiceBackend`), `GetSnapshot` (`MonitorBackend`), and `Reserve` (`FleetBackend`). The streaming **`Watch` RPC is defined in the proto but still not implemented** in either `MonitorBackend` or `AsyncMonitorBackend` — only `get_snapshot` exists. `MonitorSnapshot` decodes the typed envelope and exposes the full `raw_json` via `.parsed()`.
+
+The core's `AdmitRequest.cost` comment changed upstream in 1.6.0 / server 0.4.3. It now says `cost` has no effect on the rate axis of an `Admit` policy and that callers should use `Debit`/`Check` for weighted consumption. The vendored proto still has the old comment, `int64 cost = 3; // rate/cost units; 0 ⇒ 1`. `ServiceBackend.admit(..., cost=1)` still exposes a `cost` parameter, and its docstring doesn't mention that `cost` has no effect on such policies. This is a documentation lag only; the server behavior is unchanged.
 
 The stubs are generated by `scripts/gen_proto.py` (`grpc_tools.protoc`), which also rewrites protoc's absolute `import throttlekit_pb2` to a package-relative `from . import`. Generated stubs are git-ignored and regenerated at build time by `hatch_build.py`.
 
 ### Direct-Redis — the Lua, and where it comes from
 
-The Lua is **vendored from the core, byte-for-byte**, not hand-ported. `scripts/sync_contract.py` reads the core's `wire/scripts/manifest.json`, copies exactly the manifest-declared `*.lua` set into `src/throttlekit/_scripts/`, and these ship inside the wheel (so they resolve identically in a source checkout and an installed wheel).
+The Lua is **vendored from the core, byte-for-byte**, not hand-ported. `scripts/sync_contract.py` reads the core's `wire/scripts/manifest.json`, copies exactly the manifest-declared `*.lua` set into `src/throttlekit/_scripts/`, and these ship inside the wheel (so they resolve identically in a source checkout and an installed wheel). As noted above, the last sync predates the core's 1.6.0 `slidingWindowLog` change.
 
 `manifest.json` declares **5 strategies × {check, read} = 10 scripts**, each with `argv` order, `keys`, and a **sha256**. The `check` scripts are the ones `RedisBackend` runs (e.g. `gcra.check.lua` — 30-odd lines of GCRA: `T = period/limit`, `tau = T*burst`, derives `now` from `redis.call('TIME')` on the `0` sentinel, writes the new TAT with `SET ... PX`). The `read` scripts are present but minimal one-liners (e.g. `gcra.read.lua` = `return redis.call('GET', KEYS[1])`) and **not used by `RedisBackend`** — read-derived ops (`peek`/`forecast`) deliberately route through the service door so the core, not a re-derived client port, computes them.
 
-Two distinct hashes are in play: the manifest stores **sha256** (the integrity/drift record — verified, e.g. `gcra.check.lua` = `53d10f…`), while `_contract.py` computes **sha1** over the same bytes (what Redis caches the script under for `EVALSHA`). `test_redis_backend.py` proves the client's sha1 matches Redis's own script cache — the cross-language cache-sharing property (a Node fleet and this client `EVALSHA` the same cached script).
+Two distinct hashes are in play: the manifest stores **sha256** (the integrity/drift record — verified, e.g. `gcra.check.lua` = `53d10f…`, still identical to the core's), while `_contract.py` computes **sha1** over the same bytes (what Redis caches the script under for `EVALSHA`). `test_redis_backend.py` proves the client's sha1 matches Redis's own script cache — the cross-language cache-sharing property (a Node fleet and this client `EVALSHA` the same cached script). That property currently holds for 4 of 5 `check` scripts against a Node ≥1.6 fleet. The exception is `slidingWindowLog`.
 
 ## Conformance — how bit-identical behavior vs. the core is tested (golden vectors)
 
@@ -146,15 +171,17 @@ Two distinct hashes are in play: the manifest stores **sha256** (the integrity/d
 
 The proofs:
 
-- **`tests/test_redis_backend.py`** (the capstone): replays **every `rateLimit` golden vector** — the full, time-parametrized timeline — through `RedisBackend` → vendored Lua → **real Redis**, asserting all five reply fields against the Node oracle. Because the direct path puts an explicit `now` in ARGV, it can do the rigorous replay the cross-process service door can't. It adds a `BASE = 1000` clock offset (documented at length): the smallest window-aligned offset that clears the `now=0` server-time sentinel *and* keeps GCRA's fractional-rate cold-path arithmetic IEEE-754-exact (a large offset like `1_000_000` trips a float-boundary flip on the `gcra/fractional-T` suite). Four fields are asserted equal; `resetAt` (the one absolute-epoch field) `== oracle + BASE`.
-- **`tests/test_lease_spender.py`** replays the **6 `lease` suites** through the pure `LeaseSpender`, proving byte-identity with the core's leased L1 path.
-- **`tests/test_contract.py`** is the pure-Python **drift-gate** (no gRPC/Redis): vendored proto + vectors must match `manifest.sha256`; each shipped `.lua` must match its sha256 in `_scripts/manifest.json`; the pinned `contractVersion == "1"`; the reply tuple must agree across the scripts manifest and the vectors. Re-running `sync_contract.py` after a core change surfaces drift as a reviewable diff.
+- **`tests/test_redis_backend.py`** (the capstone): replays **every `rateLimit` golden vector** — the full, time-parametrized timeline — through `RedisBackend` → vendored Lua → **real Redis**, asserting all five reply fields against the Node oracle. Because the direct path puts an explicit `now` in ARGV, it can do the rigorous replay the cross-process service door can't. It adds a `BASE = 1000` clock offset (documented at length): the smallest window-aligned offset that clears the `now=0` server-time sentinel *and* keeps GCRA's fractional-rate cold-path arithmetic IEEE-754-exact (a large offset like `1_000_000` trips a float-boundary flip on the `gcra/fractional-T` suite). Four fields are asserted equal; `resetAt` (the one absolute-epoch field) `== oracle + BASE`. Core 1.6.0 moved every golden `rateLimit` op off `now=0` precisely so a raw-Lua port can replay them literally, so a re-sync would let this offset be removed.
+- **`tests/test_lease_spender.py`** replays the **6 `lease` suites** through the pure `LeaseSpender`, proving byte-identity with the core's leased L1 path (the 0.5.1 changelog states this replay is unchanged by the perf patch).
+- **`tests/test_contract.py`** is the pure-Python **drift-gate** (no gRPC/Redis): vendored proto + vectors must match `manifest.sha256`; each shipped `.lua` must match its sha256 in `_scripts/manifest.json`; the pinned `contractVersion == "1"`; the reply tuple must agree across the scripts manifest and the vectors. It checks *internal* consistency only. It does not compare against the live core, so the 1.6.0 upstream change did not trip it. Re-running `sync_contract.py` would surface the drift as a reviewable diff.
+
+The conformance proof is therefore exact against the core's wire **as of the last sync (core ≤1.5.2)**. The vendored vectors' `slidingWindowLog` ops use integer costs, so they do not exercise the fractional-cost case that changed.
 
 `tokenBudget` suites have no extracted wire script, so they're covered by the Node in-process path / service door and skipped in the Redis replay.
 
 ## Public API — the surface a Python user calls
 
-Exported from `throttlekit` (selected signatures):
+Exported from `throttlekit` (selected signatures; unchanged since 0.5.0):
 
 **Service door (gRPC) — sync `ServiceBackend` / async `AsyncServiceBackend`:**
 ```python
@@ -192,7 +219,7 @@ LeaseSpender(*, limit, ttl_ms=0, window_coupled=True)  # pure; .apply_lease / .s
 
 **Domain/errors:** `Decision`, `Forecast`, `ThrottleKitError`, `PolicyNotFoundError`, `OperationNotSupportedError`, `ServiceUnavailableError`.
 
-**Sync vs. async:** every transport-bearing door has a sync class and an `Async*` twin (gRPC over `grpc.aio`, Redis over `redis.asyncio`). The async twins reuse the sync pure helpers (`_decode`, `_is_noscript`, `_decision`, `_forecast`, `_mapped`). `LeaseSpender` is sync-only (it's pure, no I/O). `rate_limit` handles both, running a sync checker in a worker thread (`asyncio.to_thread`) from an async call site so it never blocks the loop.
+**Sync vs. async:** every transport-bearing door has a sync class and an `Async*` twin (gRPC over `grpc.aio`, Redis over `redis.asyncio`). The async twins reuse the sync pure helpers (`_argv_plan`, `_decode`, `_is_noscript`, `_decision`, `_forecast`, `_mapped`). `LeaseSpender` is sync-only (it's pure, no I/O). `rate_limit` handles both, running a sync checker in a worker thread (`asyncio.to_thread`) from an async call site so it never blocks the loop.
 
 ## Tech stack & dependencies
 
@@ -200,6 +227,7 @@ LeaseSpender(*, limit, ttl_ms=0, window_coupled=True)  # pure; .apply_lease / .s
 - **Runtime:** `grpcio>=1.60`, `protobuf>=6.31.1,<7` (grpcio does not pull protobuf in; both needed for the service door to import).
 - **Optional extras:** `[redis]` (`redis>=5`), `[fastapi]`/`[starlette]`/`[django]`/`[flask]`, `[all]`, `[dev]`.
 - **Tooling:** ruff (line-length 100, `E,F,I,UP,B`, ignore `E501`; `ruff==0.15.15` exact-pinned for format-check reproducibility), mypy `strict` over `src/throttlekit` (generated stubs and untyped frameworks excluded/`Any`-treated), pytest with `integration` and `redis` markers.
+- **Benchmarking (new):** `bench/micro.py`, stdlib only. It reports best-of-`--repeat` ns/op with GC disabled for `Decision()` construction and the `LeaseSpender.spend()` loop. No benchmark results are committed.
 - **Vendored, not depended-on:** the core's Lua, proto, and golden vectors (sha256-pinned via `sync_contract.py`).
 
 ## Build / install / test (actual commands; packaging)
@@ -215,44 +243,49 @@ python scripts/sync_contract.py        # vendor proto+vectors+Lua from the core 
 python scripts/gen_proto.py            # generate gRPC stubs into src/throttlekit/_generated/
 pytest                                 # unit + contract; Redis/service tests skip if backend absent
 ruff check . && ruff format --check . && mypy
+python bench/micro.py                  # per-call hot-path micro-benchmarks (new in 0.5.1)
 ```
 
 **Packaging:** sdist carries the proto + Lua + scripts; a wheel build (direct or wheel-from-sdist) runs `hatch_build.py` → regenerates the stubs and force-includes `src/throttlekit/_generated/**/*.py` via `artifacts` (past `.gitignore`). `check_wheel_stubs.py` asserts the stubs are actually inside the built wheel — guarding the historical bug where a stub-less wheel's `import ServiceBackend` failed only on a fresh install.
 
-**Release:** `release.yml` publishes to PyPI on a `v*` tag via **trusted publishing (OIDC, no token)**, smoke-tests the wheel in a clean venv (incl. installing the exact `protobuf==6.31.1` floor to prove it satisfies the gencode pin), then cuts a GitHub Release from the CHANGELOG section. `skip-existing: true` makes re-runs idempotent.
+**Release:** `release.yml` publishes to PyPI on a `v*` tag via **trusted publishing (OIDC, no token)**, smoke-tests the wheel in a clean venv (incl. installing the exact `protobuf==6.31.1` floor to prove it satisfies the gencode pin), then cuts a GitHub Release from the CHANGELOG section. `skip-existing: true` makes re-runs idempotent. The `v0.5.1` push ran both `CI` and `Release` successfully on GitHub (2026-06-30).
 
 ## Tests
 
-**18 test modules, 2,469 lines.** Coverage by area:
+**18 test modules, 2,469 lines**, unchanged since June. The 0.5.1 perf commits relied on the existing suites and added no tests. Coverage by area:
 
 - **Conformance / contract:** `test_contract.py` (drift-gate), `test_redis_backend.py` + `test_redis_backend_async.py` (golden-vector replay through real Redis, `@pytest.mark.redis`), `test_lease_spender.py` (lease-vector replay), `test_strategies.py`.
 - **gRPC backends:** `test_service_backend.py` + `_async` (start a **real `throttlekit-server`** via node, `@pytest.mark.integration`; skip if node / stubs / built server absent), `test_service_backend_postgres.py` + `test_service_backend_dynamodb.py` (store-agnostic conformance against `--store postgres`/`dynamodb` servers — proving a Python client reaches non-Redis stores through the door), `test_fleet_backend.py` (248 lines, the largest), `test_monitor_backend.py`, `test_async_heartbeat_pump.py`.
 - **Ergonomics & contrib:** `test_headers.py`, `test_ratelimit_decorator.py`, and one per framework (`test_contrib_fastapi/starlette/django/flask.py`, driven by in-process TestClients).
 
-CI (`ci.yml`) runs four jobs: **lint** (ruff), **test** (3.10–3.13 matrix, `mypy --python-version` per floor + pytest, with a `redis:7-alpine` service container so the vector replay actually *runs*), **contract** (the standalone pure-Python drift-gate), and **build** (build the real wheel, assert stubs inside, clean-install and import both doors). The service-door integration tests skip in CI (no Node server built there).
+CI (`ci.yml`) runs four jobs: **lint** (ruff), **test** (3.10–3.13 matrix, `mypy --python-version` per floor + pytest, with a `redis:7-alpine` service container so the vector replay actually *runs*), **contract** (the standalone pure-Python drift-gate), and **build** (build the real wheel, assert stubs inside, clean-install and import both doors). The service-door integration tests skip in CI (no Node server built there). Unlike the core, this repo has no mutation, fuzz, or model-based test layer, and no CI step compares the vendored contract against the core's current `wire/`.
 
 ## Status, completeness & notable gaps
 
-- **Published and maintained:** on PyPI through `0.5.0`, six releases, automated trusted-publishing pipeline. Classified `Alpha`.
-- **Honest about its experimental edge:** the raw Lua wire is **not frozen** — `manifest.json` and the golden vectors both ship `"frozen": false` — so the `RedisBackend` is explicitly experimental and may change with the core's scripts. The proto service door is the "comfortable freeze" (additive-evolvable).
+- **Published and maintained, but quiet:** on PyPI through `0.5.1`, seven releases, automated trusted-publishing pipeline, classified `Alpha`. The only change since June is the 0.5.1 perf patch, and there has been no commit since 2026-06-30.
+- **Honest about its experimental edge:** the raw Lua wire is **not frozen** — `manifest.json` and the golden vectors both ship `"frozen": false` — so the `RedisBackend` is explicitly experimental and may change with the core's scripts. That has now happened once: 1.6.0 changed the `slidingWindowLog` check script. The proto service door is the "comfortable freeze" (additive-evolvable).
 - **Gaps:**
+  - **Vendored contract is stale vs. core 1.7.0 (new).** `slidingWindowLog.check.lua` and `golden-vectors.json` differ from the core's `wire/`, and the proto differs by one comment. The fix is mechanical: re-run `sync_contract.py`, regenerate, and probably drop the `BASE` offset. Until then the "byte-for-byte the core's Lua" claim is true for 9 of 10 scripts.
   - **`Watch` (the streaming Monitor RPC) is unimplemented.** The proto defines `Monitor.Watch(stream)`, but the `MonitorBackend`/`AsyncMonitorBackend` clients only call `GetSnapshot`. No streaming denial feed on the Python side.
   - **`RedisBackend` is `check`-only by design** — no `peek`/`forecast`/`check_many`/`debit`/`admit` on the direct door (those route through the service door). This is a deliberate one-oracle constraint, not an oversight, but it means the direct door is a strict subset.
+  - **`cost` is typed `int` but not validated** on the direct door. A float reaches the Lua unchanged, which is exactly the input on which the stale `slidingWindowLog` script diverges from the core.
   - The vendored `*.read.lua` scripts are shipped (and integrity-checked) but **unused** by the client.
   - `admit`'s `hold`/`value` joint-LP terms are marked experimental in both proto and docstrings.
 
-Overall: a thorough, well-tested, properly-packaged client SDK whose central claim (bit-identical to the core) is genuinely backed by executable conformance, not just asserted.
+Overall: a thorough, well-tested, properly packaged client SDK. Its central claim, bit-identical to the core, is backed by executable conformance, not just asserted. That conformance is now pinned to an older core wire, and nothing in CI will notice until someone re-syncs.
 
 ## README vs. code
 
 The README is unusually accurate; discrepancies are minor:
 
 - **Accurate:** dist-vs-import name split, the two-door model, `RedisBackend` being `check`-only with `now` defaulting to the Redis server clock, the lazy-import design, the sync/async twins, the `from_spec`/`bind_policy`/`decision_headers` ergonomics, the sha256-pinned vendoring flow, the `BASE`-offset conformance proof, and the store-agnostic service door (memory/Redis/Postgres/DynamoDB) — all match the code and tests.
+- **"Bit-identical to the Node oracle" now has a version caveat.** The README says the `RedisBackend` "replays the core's full golden vectors through real Redis." It replays the **1.4.0** vectors it vendored, which is accurate as stated. Against a current (≥1.6) Node fleet, however, `slidingWindowLog` runs different script bytes, so the two sides no longer share an `EVALSHA` cache entry and they diverge on non-integer cost. The README does not mention which core version the vendored wire tracks.
 - **Watch not mentioned but also not implemented:** the README describes `MonitorBackend.get_snapshot()` only (consistent with the code) and does **not** claim a `Watch`/streaming client — so no over-claim there, but a reader comparing to the proto should know `Watch` exists on the wire yet has no Python client.
 - **`debit(policy, key, tokens)`** is documented in the README and implemented on both `ServiceBackend` and `AsyncServiceBackend` — matches.
 - **GALE/TALE/TLA⁺ guarantees** the README leans on (machine-checked overshoot bound, etc.) are properties of the **core**, not this repo — the README is clear that the client merely *reaches* the proven core, which is correct: no such proofs live in this codebase (the `lease`-vector replay in `test_lease_spender.py` is the local witness of the leased-path byte-identity).
-- **Minor version-doc lag:** `pyproject` and `_version.py` are `0.5.0` and PyPI's latest is `0.5.0`, but the checked-in `dist/` still holds stale `0.4.0` artifacts (a local-build leftover, harmless — the real release pipeline rebuilds in CI).
+- **Version framing:** the README still headlines "New in 0.5.0" and doesn't mention 0.5.1. That is reasonable for a perf-only patch, and the CHANGELOG covers it.
+- **Local leftover:** a stale `dist/` holding `0.4.0` artifacts sits in the working tree but is **gitignored** (`.gitignore: dist/`), so it is a local-build leftover, not part of the repo.
 
 ---
 
-*Doc generated 2026-06-16 by reading the source at C:\Users\ameya\Documents\throttlekit-py. Source of truth: https://github.com/AmeyaBorkar/throttlekit-py*
+*Doc generated 2026-06-16, refreshed 2026-10-12 by reading the source at C:\Users\ameya\Documents\throttlekit-py. Source of truth: https://github.com/AmeyaBorkar/throttlekit-py*
