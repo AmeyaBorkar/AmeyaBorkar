@@ -2,7 +2,7 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1a1a2e,100:16213e&height=180&section=header&text=Ameya%20Borkar&fontSize=58&fontColor=e6edf3&fontAlignY=38&desc=i%20build%20things.%20some%20of%20them%20even%20work.&descAlignY=56&descSize=18&animation=fadeIn" width="100%"/>
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=800&color=58A6FF&center=true&vCenter=true&width=800&lines=wrote+a+70k-line+hypervisor+microkernel+·+for+fun+·+it+boots.;taught+a+drone+to+see+things.+it+won+nationally.;yes%2C+i+beatbox.+no%2C+you+cannot+hear+it.;barbell+in+the+morning+·+keyboard+at+night.)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=16&duration=3000&pause=800&color=58A6FF&center=true&vCenter=true&width=800&lines=wrote+a+70k-line+hypervisor+microkernel+·+for+fun+·+it+boots.;3rd+at+the+amazon+ml+challenge.+32%2C000%2B+teams.;taught+a+drone+to+see+things.+it+won+nationally.;yes%2C+i+beatbox.+no%2C+you+cannot+hear+it.;barbell+in+the+morning+·+keyboard+at+night.)](https://git.io/typing-svg)
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ameya-borkar-69b947381)
 [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=flat-square&logo=firefox&logoColor=58a6ff)](https://www.ameyaborkar.in/)
@@ -18,7 +18,7 @@ i'm ameya. i write code, lift heavy things, ride motorcycles, and beatbox — no
 
 my computer vision stack once helped a drone win a national championship. my barbell still doesn't care.
 
-when i learn something, my first thought is *"okay but what can i build with this?"* — which is how i ended up publishing research, deploying backends for real companies, and accidentally becoming the person who beatboxes at tech events.
+when i learn something, my first thought is *"okay but what can i build with this?"* — which is how i ended up publishing research, deploying backends for real companies, placing 3rd at the amazon ml challenge, and accidentally becoming the person who beatboxes at tech events.
 
 > wrote a banking system in C — stock market and all — just to see if i could. i could.
 > so i wrote a 70,000-line hypervisor microkernel next. it boots on three different laptops.
@@ -38,6 +38,7 @@ sorted the way the repo is — by what they actually are. each one links to a de
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
 | ⚙️ | **[VeridianOS](projects/systems/VeridianOS.md)** — type-1 hypervisor microkernel | C · assembly · VT-x / AMD-V · IOMMU · EPT/NPT | 70,788 lines of bare-metal C. every OS component runs inside its own hardware-isolated VM domain. ships its own tcp/ip stack. boots end-to-end on three laptops spanning Kaby Lake, Tiger Lake *and* Zen 5. i'm still processing this. |
+| 🧩 | **[Mosaic](projects/systems/mosaic.md)** — sandboxed media-to-art methods | Rust · WebAssembly · wasmtime · TypeScript | community-written "facets" turn images *and* audio into ascii, braille, and spectrogram art. untrusted code, so it runs fuel-capped and walled off — on the server and in your browser — with certificates that check the preview matches the render. wrote my own tiny language and a bytecode VM for it too. |
 | 🧱 | **[TaskForge-OS](projects/systems/TaskForge-OS.md)** — an OS in miniature | C · POSIX threads · Win32 | a banking app that talks to a tiny kernel through "system calls." schedulers, paging, deadlock detection — the whole OS-course greatest-hits album. |
 | 🔄 | **[SyncUp](projects/systems/SyncUp.md)** — concurrent file backup | C · pthreads · slab allocator | a directory mirror that's secretly an entire operating-systems course. worker pool, custom allocator, resource-allocation-graph deadlock tracking. |
 | 🚓 | **[GridWatch](projects/systems/GridWatch.md)** — emergency dispatch sim | C11 · Fibonacci heaps · suffix arrays · BK-trees · TUI + Flask | sends ambulances around a grid city. every number on screen is powered by a different advanced data structure. the whole DS syllabus, cosplaying as a 911 dispatcher. |
@@ -48,10 +49,13 @@ sorted the way the repo is — by what they actually are. each one links to a de
 
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
+| 🏆 | **[Grenuke](projects/ml-research/Grenuke.md)** — amazon ml challenge 2026, 3rd place | Python · XGBoost · cross-encoders · Qwen2.5 + LoRA | match businesses across three countries from names and addresses alone — one of which (france) never shows up in training. cheap trees score 58M pairs, the big models only read the 2.6% they're unsure about. 0.990879 F0.5. 3rd at the grand finale out of 32,000+ teams. i captained. |
+| 📚 | **[mlsc-knowledge-assistant](projects/ml-research/mlsc-knowledge-assistant.md)** — RAG that knows when to shut up | Python · FastAPI · BM25 + dense · Gemini | every answer cites the passage it came from. three refusal gates took the hallucination rate on unanswerable questions from 0.83 to 0.00. built for the MLSC AI/ML lead challenge. |
+| 🎲 | **[harness-variance](projects/ml-research/harness-variance.md)** — do agent benchmarks lie? | Python · R · Bayesian models (brms) | the harness moves the gap between two models by more than the gap itself — so 42% of published model rankings flip. research in progress. |
 | 📜 | **[PROMETHEUS](projects/ml-research/PROMETHEUS.md)** — binarization study | PyTorch · Neural ODEs · DINOv2 · ASPP | ablated every fancy idea on DIBCO. the physics-informed ODE made it *worse*. wrote that down. the boring patch-extraction trick is what actually won. |
 | 🧠 | **[AdaptaNet](projects/ml-research/AdaptaNet.md)** — adaptive vision framework | PyTorch · deformable CNN · MoE transformer | dynamic backbone + mixture-of-experts transformer + a dozen custom losses. more config knobs than sense. |
 | 🎭 | **[SGEE](projects/ml-research/SGEE.md)** — emotion embeddings | PyTorch · RoBERTa · NRC-VAD | anchors transformer representations in valence-arousal-dominance space. contrastive grounding stacked on supervised heads. |
-| 🎵 | **[EdgeCAAI-Net](projects/ml-research/EdgeCAAI-Net.md)** — music genre classifier | PyTorch · torchaudio · gradient reversal | 1.42M params. accidentally proved the benchmarks were leaking artists between train and test — 559 of 765 of them. oops. |
+| 🎵 | **[EdgeCAAI-Net](projects/ml-research/EdgeCAAI-Net.md)** — music genre classifier | PyTorch · torchaudio · gradient reversal | 1.42M params. accidentally proved the benchmarks were leaking artists between train and test — 559 of 765 of them. oops. now published at ICICI 2026 (IEEE). |
 | 🧬 | **[Engram](projects/ml-research/Engram.md)** — LLM memory that *consolidates* | Python · PyPI (`engrampy`) · clustering · principled decay | raw events → summaries → abstractions. use strengthens, redundancy decays on a closed-form curve. because "vector db with a search bar" is not memory. |
 | 🖼️ | **[LocateVision](projects/ml-research/LocateVision.md)** — campus classifier | ResNet-50 · Swin Transformer · Flask | fuses a CNN and a transformer through a learned gate. served behind a small web UI. |
 | 📦 | **[Tesseract](projects/ml-research/Tesseract.md)** — cargo X-ray VLM | FastAPI · Qwen2.5-VL-7B · HuggingFace | a vision-language model for customs officers. natural-language contraband reasoning, with a python risk-scorer doing the math the model won't. |
@@ -60,6 +64,7 @@ sorted the way the repo is — by what they actually are. each one links to a de
 
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
+| ⏱️ | **[Kairos](projects/finance/kairos.md)** — payment-health defence | TypeScript · Fastify · Postgres · CUSUM | catches a bank's payment rail going bad in ~90 seconds, steers checkout around it, and retries lost payments the moment it heals. every action passes a spending kernel: 64 workers, ₹0 over budget. built solo for the razorpay ai buildathon. |
 | 📊 | **[trader-edge](projects/finance/trader-edge.md)** — pre-trade risk engine | Python · NumPy · SciPy · option-chain IV · Monte Carlo | no LLMs in the loop. black-scholes, IV inversion, barrier first-passage, a 25k-path monte carlo. tells you when your "1:3 R:R" is actually 1:3 noise. |
 | 📈 | **[Nifty-Pricing-Mirror](projects/finance/Nifty-Pricing-Mirror.md)** — basis surface | Python · Groww API · rich · Flask | live spot-vs-futures basis for NSE indices, refreshed every 3s. premium, discount, or flat — in a terminal table. |
 | 🔮 | **[PRISM](projects/finance/PRISM.md)** — autonomous stock analyst | LLM ReAct loop · Groq · XGBoost · Prophet | an agent that picks its own research tools and runs them live, then an ML ensemble argues with it. watch it think in real time. |
@@ -78,6 +83,7 @@ sorted the way the repo is — by what they actually are. each one links to a de
 | | what | with what | the twist |
 |:--:|------|-----------|-----------|
 | 🗺️ | **[proximap](projects/web/proximap.md)** — headless geospatial engine | TypeScript · OpenStreetMap · MCP | not a map widget — an engine. nearby-ranking, isochrones, walkability, and an errand planner that solves a generalized TSP with exact held-karp DP. ships as a library, a CLI, *and* an MCP server. |
+| 🚀 | **[ameyaborkar.in](projects/web/portfolio.md)** — my portfolio, as a rocket launch | vanilla JS · canvas · hand-written framebuffer | scroll down, fly higher. altitude is time. every pixel drawn by hand into a software framebuffer, dithered skies and all. no framework, no build step, no image files. |
 | 📝 | **[markdown-viewer](projects/web/markdown-viewer.md)** — one package, three surfaces | Python · FastAPI · tkinter · pure-stdlib markdown engine | rest api, desktop app, website — all off a hand-written markdown engine. no external markdown lib. four hand-tuned themes. |
 | 🔤 | **[FontVisualizer](projects/web/FontVisualizer.md)** — type specimen tool | vanilla JS | 132 google fonts, live preview, an HSV color wheel, and a full-screen "studio board." one html file, no build. |
 | 🌾 | **[elegantlandscape.in](projects/web/Elegant-Landscape.md)** — live studio site | vanilla HTML/CSS/JS · canvas · Vercel | a real site for a Pune landscape studio. 192-frame scroll-driven canvas animation. zero frameworks, zero build step. |
@@ -103,7 +109,8 @@ sorted the way the repo is — by what they actually are. each one links to a de
 - 🏍️ &nbsp;solving hard problems at 80 km/h
 - 🚁 &nbsp;teaching drones to see things
 - 🥊 &nbsp;training MMA *(the only thing that hits harder than a segfault.)*
-- 📄 &nbsp;published a paper. mentioned it once. here it is again.
+- 🏆 &nbsp;came 3rd at the amazon ml challenge 2026 *(32,000+ teams. still grinning.)*
+- 📄 &nbsp;published two papers — springer and IEEE. mentioned them once. here they are again.
 - 🥁 &nbsp;beatboxing when no one's watching *(and sometimes when they are)*
 
 <br>
@@ -112,7 +119,7 @@ sorted the way the repo is — by what they actually are. each one links to a de
 
 <div align="center">
 
-[![Languages](https://skillicons.dev/icons?i=python,c,cpp,java,go,ts,js,mysql&theme=dark)](https://skillicons.dev)
+[![Languages](https://skillicons.dev/icons?i=python,c,cpp,rust,java,go,ts,js,mysql&theme=dark)](https://skillicons.dev)
 
 [![Web/Backend](https://skillicons.dev/icons?i=nextjs,react,nodejs,express,fastapi,flask,astro,redis,postgres,docker&theme=dark)](https://skillicons.dev)
 
